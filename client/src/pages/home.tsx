@@ -11,10 +11,11 @@ import StoryChain from "@/components/story-chain";
 import StoryInput from "@/components/story-input";
 import RoomManager from "@/components/room-manager";
 import CommunityStats from "@/components/community-stats";
-import { Cookie, Calendar, Users, Plus, Menu, User, Bookmark, Heart, MessageCircle, Share } from "lucide-react";
+import { Cookie, Calendar, Users, Plus, Menu, User, Bookmark, Heart, MessageCircle, Share, Book } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserProfile } from "@/components/user-profile";
+import { PageLoader } from "@/components/loading-spinner";
 import type { StoryChain as StoryChainType, Theme, CommunityStats as CommunityStatsType } from "@shared/schema";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -22,8 +23,13 @@ import { Link } from "wouter";
 
 export default function Home() {
   const { toast } = useToast();
-  const { user: currentUser, isAuthenticated } = useAuth();
+  const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"global" | "themed">("global");
+
+  // Show loading while authentication is being determined
+  if (isLoading) {
+    return <PageLoader />;
+  }
 
   if (!isAuthenticated || !currentUser) {
     return (
@@ -89,10 +95,9 @@ export default function Home() {
       await submitStoryMutation.mutateAsync({
         chainId: finalChainId,
         content,
-        sequence,
         roomId: null, // Global room
         authorId: currentUser.id,
-        authorName: currentUser.username,
+        authorName: currentUser.username || "Anonymous",
       });
     } catch (error) {
       console.error("Failed to submit story:", error);
@@ -100,57 +105,36 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-soft-cream dark:bg-gray-900">
+    <div className="min-h-screen bg-soft-cream dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo and Branding */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl">
-                <Cookie className="w-5 h-5" />
+              <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl float-animation">
+                <Cookie className="w-5 h-5 icon-animate" />
               </div>
               <div>
-                <h1 className="font-serif font-semibold text-xl text-gray-800">Cookie's Someone Somewhere</h1>
-                <p className="text-xs text-gray-500">Inspired by Nemrah Ahmed</p>
+                <h1 className="font-serif font-semibold text-xl text-gray-800 dark:text-white">
+                  Cookie's
+                </h1>
+                <p className="font-serif text-sm text-gray-600 dark:text-gray-300 -mt-1">
+                  Someone Somewhere
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                  Inspired by Nemrah Ahmed
+                </p>
               </div>
             </div>
 
-            {/* Navigation Menu */}
-            <nav className="hidden md:flex items-center space-x-6">
-              <span className="text-warm-teal font-medium border-b-2 border-warm-teal">Home</span>
-              <Link href="/community">
-                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Community</span>
-              </Link>
-              <Link href="/rooms">
-                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Rooms</span>
-              </Link>
-              <Link href="/profile">
-                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Profile</span>
-              </Link>
-              {currentUser.role === "admin" && (
-                <Link href="/admin">
-                  <span className="text-red-600 hover:text-red-700 transition-colors cursor-pointer">Admin</span>
-                </Link>
-              )}
-            </nav>
-
             {/* User Actions */}
             <div className="flex items-center space-x-3">
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div className="hidden md:flex items-center space-x-3">
-                <UserProfile user={currentUser} compact />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => window.location.href = "/api/logout"}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Logout
-                </Button>
+              <div className="theme-toggle">
+                <ThemeToggle />
+              </div>
+              <div className="flex items-center space-x-3">
+                {currentUser && <UserProfile user={currentUser} compact />}
               </div>
             </div>
           </div>
@@ -173,21 +157,95 @@ export default function Home() {
             <StoryInput 
               onSubmit={handleStorySubmit}
               isSubmitting={submitStoryMutation.isPending}
-              user={currentUser}
+              user={currentUser!}
               currentStory={storyChains.length > 0 ? storyChains[0].stories.map(s => s.content).join(' ') : ''}
             />
 
             {/* Quick Actions */}
             <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <Button variant="outline" className="border-warm-teal text-warm-teal hover:bg-warm-teal hover:text-white">
-                <Users className="w-4 h-4 mr-2" />
+              <Button 
+                variant="outline" 
+                className="border-warm-teal text-warm-teal hover:bg-warm-teal hover:text-white btn-animate"
+                onClick={() => window.location.href = '/rooms'}
+              >
+                <Users className="w-4 h-4 mr-2 icon-animate" />
                 Create Private Room
               </Button>
-              <Button className="bg-warm-brown text-white hover:bg-warm-brown/90">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button 
+                className="bg-warm-brown text-white hover:bg-warm-brown/90 btn-animate"
+                onClick={() => window.location.href = '/rooms'}
+              >
+                <Plus className="w-4 h-4 mr-2 icon-animate" />
                 Join Room
               </Button>
+              <Button 
+                variant="outline"
+                className="border-warm-brown text-warm-brown hover:bg-warm-brown hover:text-white btn-animate"
+                onClick={() => window.location.href = '/community'}
+              >
+                <Book className="w-4 h-4 mr-2 icon-animate" />
+                Browse Stories
+              </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Featured Actions - Key Features from initial.md */}
+        <section className="mb-12">
+          <h3 className="font-serif text-2xl font-semibold text-gray-800 dark:text-white mb-6 text-center">
+            🍪 Cookie's Storytelling Hub
+          </h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Create Story Rooms */}
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/rooms'}>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-warm-teal rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Create Story Rooms</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                  Start private rooms with friends or join public storytelling spaces
+                </p>
+                <Button className="w-full bg-warm-teal text-white hover:bg-warm-teal/90 btn-animate">
+                  <Plus className="w-4 h-4 mr-2 icon-animate" />
+                  Create Room
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Join Collaborative Storytelling */}
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/community'}>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-warm-brown rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
+                  <Book className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Collaborative Stories</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                  Continue where others left off and build amazing stories together
+                </p>
+                <Button className="w-full bg-warm-brown text-white hover:bg-warm-brown/90 btn-animate">
+                  <Heart className="w-4 h-4 mr-2 icon-animate" />
+                  Join Stories
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Manage Profile */}
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/profile'}>
+              <CardContent className="p-6 text-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Your Profile</h4>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                  Track contributions, earn badges, and see your storytelling journey
+                </p>
+                <Button className="w-full bg-gradient-to-r from-warm-teal to-warm-brown text-white btn-animate">
+                  <Bookmark className="w-4 h-4 mr-2 icon-animate" />
+                  View Profile
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </section>
 
@@ -304,10 +362,10 @@ export default function Home() {
               {dailyTheme && (
                 <div className="bg-white/80 rounded-lg p-4 mb-4">
                   <p className="text-sm text-gray-800 font-medium mb-2">
-                    "{dailyTheme.title}"
+                    "{dailyTheme?.title}"
                   </p>
                   <p className="text-xs text-gray-600">
-                    {dailyTheme.prompt}
+                    {dailyTheme?.prompt}
                   </p>
                 </div>
               )}
@@ -322,7 +380,7 @@ export default function Home() {
         </section>
 
         {/* Room Management Section */}
-        <RoomManager currentUser={currentUser} />
+        <RoomManager currentUser={currentUser!} />
       </main>
 
       {/* Footer */}

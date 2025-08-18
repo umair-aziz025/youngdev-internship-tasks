@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin, isModerator } from "./replitAuth";
+import { setupAuth, authenticateToken, optionalAuth, requireAdmin, requireModerator } from "./auth";
 import { insertUserSchema, insertRoomSchema, insertStorySchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Setup authentication
-  await setupAuth(app);
+  setupAuth(app);
   
   // OpenAI client setup
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -105,9 +105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', authenticateToken as any, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes for user management
-  app.get('/api/admin/users', isAdmin, async (req, res) => {
+  app.get('/api/admin/users', requireAdmin as any, async (req, res) => {
     try {
       const users = Array.from((storage as any).users.values());
       res.json(users);
@@ -126,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/users/:id/role', isAdmin, async (req, res) => {
+  app.patch('/api/admin/users/:id/role', requireAdmin as any, async (req, res) => {
     try {
       const { role } = req.body;
       if (!['user', 'moderator', 'admin'].includes(role)) {
@@ -174,9 +174,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = insertUserSchema.parse(req.body);
       
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+      if (userData.email) {
+        const existingUser = await storage.getUserByEmail(userData.email);
+        if (existingUser) {
+          return res.status(400).json({ message: 'User already exists' });
+        }
       }
       
       const user = await storage.createUser(userData);
@@ -237,10 +239,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stories
   app.post('/api/stories', requireAuth, async (req, res) => {
     try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
       const storyData = insertStorySchema.parse({
         ...req.body,
-        authorId: req.user.id,
-        authorName: req.user.username,
+        authorId: (req.user as any).id,
+        authorName: (req.user as any).username || (req.user as any).email || "Anonymous",
       });
       
       const story = await storage.createStory(storyData);

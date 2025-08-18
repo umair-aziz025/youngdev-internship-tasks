@@ -16,32 +16,87 @@ import {
   Calendar,
   Award,
   TrendingUp,
-  Edit
+  Edit,
+  Menu,
+  Coffee,
+  Home,
+  Cookie
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Story, User as UserType } from "@shared/schema";
-
-// Mock user data (in real app this would come from auth context)
-const mockUser: UserType = {
-  id: "user-1",
-  username: "Sarah",
-  email: "sarah@example.com",
-  avatar: "",
-  contributionsCount: 12,
-  heartsReceived: 45,
-  experiencePoints: 340,
-  level: 4,
-  badges: ["first-story", "heart-giver", "storyteller"],
-  preferences: {},
-  createdAt: new Date("2024-01-15"),
-};
+import { UserProfile } from "@/components/user-profile";
+import { PageLoader } from "@/components/loading-spinner";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
+import type { Story } from "@shared/schema";
 
 export default function Profile() {
+  const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Show loading while authentication is being determined
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  // Redirect to auth if not authenticated
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl float-animation">
+                  <Cookie className="w-5 h-5 icon-animate" />
+                </div>
+                <div>
+                  <h1 className="font-serif font-semibold text-xl text-gray-800 dark:text-white">
+                    Cookie's
+                  </h1>
+                  <p className="font-serif text-sm text-gray-600 dark:text-gray-300 -mt-1">
+                    Someone Somewhere
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    Inspired by Nemrah Ahmed
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <ThemeToggle />
+                <Button 
+                  onClick={() => window.location.href = '/auth'}
+                  className="bg-orange-600 text-white hover:bg-orange-700 btn-animate"
+                >
+                  Sign In to View Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="py-8 text-center">
+              <User className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Your Storytelling Journey</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Sign in to view your profile, track your progress, and see your storytelling achievements.
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/auth'}
+                className="bg-orange-600 text-white hover:bg-orange-700"
+              >
+                Sign In
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // In a real app, these would be actual API calls
   const { data: userStories = [] } = useQuery<Story[]>({
-    queryKey: ["/api/users", mockUser.id, "stories"],
+    queryKey: ["/api/users", currentUser.id, "stories"],
     queryFn: () => Promise.resolve([]), // Mock empty for now
   });
 
@@ -56,165 +111,161 @@ export default function Profile() {
     return badges[badgeId as keyof typeof badges] || { name: badgeId, icon: "🎖️", description: "Special achievement" };
   };
 
-  const nextLevelXP = mockUser.level * 100;
-  const currentLevelXP = (mockUser.level - 1) * 100;
-  const progressToNextLevel = ((mockUser.experiencePoints - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
+  const nextLevelXP = currentUser.level * 100;
+  const currentLevelXP = (currentUser.level - 1) * 100;
+  const progressToNextLevel = ((currentUser.experiencePoints - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-warm-cream to-warm-beige">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-warm-brown/20 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-warm-brown">My Profile</h1>
-            <p className="text-warm-brown/70">Track your storytelling journey</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            {/* Logo and Branding */}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl float-animation">
+                <Cookie className="w-5 h-5 icon-animate" />
+              </div>
+              <div>
+                <h1 className="font-serif font-semibold text-xl text-gray-800 dark:text-white">
+                  Cookie's
+                </h1>
+                <p className="font-serif text-sm text-gray-600 dark:text-gray-300 -mt-1">
+                  Someone Somewhere
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                  Inspired by Nemrah Ahmed
+                </p>
+              </div>
+            </div>
+
+            {/* User Actions */}
+            <div className="flex items-center space-x-3">
+              <div className="theme-toggle">
+                <ThemeToggle />
+              </div>
+              <div className="flex items-center space-x-3">
+                <UserProfile user={currentUser} compact />
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Profile Header */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={mockUser.avatar} />
-                <AvatarFallback className="text-2xl bg-warm-teal text-white">
-                  {mockUser.username.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-2">
-                  <h2 className="text-2xl font-bold text-warm-brown">{mockUser.username}</h2>
-                  <Badge className="bg-warm-teal text-white">
-                    Level {mockUser.level}
-                  </Badge>
-                </div>
-                
-                <p className="text-gray-600 mb-4">Storyteller since {mockUser.createdAt.toLocaleDateString()}</p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Progress to Level {mockUser.level + 1}</span>
-                    <span>{mockUser.experiencePoints}/{nextLevelXP} XP</span>
+        <div className="mb-8">
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+            <CardContent className="p-8">
+              <div className="flex items-center space-x-6">
+                <Avatar className="h-20 w-20 border-4 border-white/20">
+                  <AvatarFallback className="bg-white/20 text-white text-2xl">
+                    {(currentUser.username || currentUser.email || "U").charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h2 className="text-3xl font-bold mb-2">{currentUser.username || "Anonymous"}</h2>
+                  <div className="flex items-center space-x-4 text-orange-100 mb-4">
+                    <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                      Level {currentUser.level}
+                    </Badge>
+                    <span className="text-sm">
+                      Storyteller since {currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : "Unknown"}
+                    </span>
                   </div>
-                  <Progress value={progressToNextLevel} className="h-2" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Progress to Level {currentUser.level + 1}</span>
+                      <span>{currentUser.experiencePoints} XP / {nextLevelXP} XP</span>
+                    </div>
+                    <Progress value={progressToNextLevel} className="bg-white/20" />
+                  </div>
                 </div>
+                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
               </div>
-
-              <Button variant="outline" className="flex items-center gap-2">
-                <Edit className="w-4 h-4" />
-                Edit Profile
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Overview */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <MessageCircle className="w-8 h-8 mx-auto mb-3 text-warm-teal" />
-              <div className="text-2xl font-bold text-warm-brown">{mockUser.contributionsCount}</div>
-              <div className="text-sm text-gray-600">Stories Written</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Heart className="w-8 h-8 mx-auto mb-3 text-warm-teal" />
-              <div className="text-2xl font-bold text-warm-brown">{mockUser.heartsReceived}</div>
-              <div className="text-sm text-gray-600">Hearts Received</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Star className="w-8 h-8 mx-auto mb-3 text-warm-teal" />
-              <div className="text-2xl font-bold text-warm-brown">{mockUser.experiencePoints}</div>
-              <div className="text-sm text-gray-600">Experience Points</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 text-center">
-              <Trophy className="w-8 h-8 mx-auto mb-3 text-warm-teal" />
-              <div className="text-2xl font-bold text-warm-brown">{mockUser.badges.length}</div>
-              <div className="text-sm text-gray-600">Badges Earned</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Detailed Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <BookOpen className="h-8 w-8 text-orange-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Stories Written</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <Heart className="h-8 w-8 text-red-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{currentUser.heartsReceived || 0}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Hearts Received</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <MessageCircle className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">0</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Collaborations</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">{currentUser.level}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Current Level</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stories">My Stories</TabsTrigger>
-            <TabsTrigger value="badges">Badges</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recent Activity */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-warm-teal" />
+                  <CardTitle className="flex items-center">
+                    <Calendar className="h-5 w-5 mr-2 text-orange-500" />
                     Recent Activity
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-warm-teal rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm">Added a story to "Mystery Chain #3"</p>
-                        <p className="text-xs text-gray-500">2 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-warm-teal rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm">Received 3 hearts on your story</p>
-                        <p className="text-xs text-gray-500">5 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-warm-teal rounded-full"></div>
-                      <div className="flex-1">
-                        <p className="text-sm">Joined "Romance Theme Room"</p>
-                        <p className="text-xs text-gray-500">1 day ago</p>
-                      </div>
+                    <div className="text-center py-8">
+                      <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">Start writing stories to see your activity here!</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Favorite Genres */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-warm-teal" />
-                    Favorite Themes
+                  <CardTitle className="flex items-center">
+                    <Star className="h-5 w-5 mr-2 text-orange-500" />
+                    Favorite Genres
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Romance</span>
-                      <Badge variant="secondary">8 stories</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Mystery</span>
-                      <Badge variant="secondary">3 stories</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Adventure</span>
-                      <Badge variant="secondary">1 story</Badge>
-                    </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">Fantasy</Badge>
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">Romance</Badge>
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">Adventure</Badge>
+                    <Badge variant="outline" className="text-orange-600 border-orange-200">Mystery</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -222,125 +273,57 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="stories" className="space-y-6">
-            {userStories.length === 0 ? (
-              <Card className="p-8 text-center">
-                <MessageCircle className="w-16 h-16 mx-auto mb-4 text-warm-teal" />
-                <h3 className="text-xl font-semibold mb-2">No stories yet</h3>
-                <p className="text-gray-600 mb-4">Start writing to see your stories here!</p>
-                <Button>Write Your First Story</Button>
-              </Card>
-            ) : (
-              <div className="grid gap-6">
-                {userStories.map((story) => (
-                  <Card key={story.id}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Story Chain #{story.chainId}</CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{story.hearts} hearts</Badge>
-                          <Badge variant="outline">{story.comments} comments</Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-700 mb-4">{story.content}</p>
-                      <div className="text-sm text-gray-500">
-                        Written {new Date(story.createdAt).toLocaleDateString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="badges" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-warm-teal" />
-                  Your Achievements
+                <CardTitle>My Stories</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No stories yet</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Start writing your first story!</p>
+                  <Link href="/">
+                    <Button className="mt-4 bg-orange-600 hover:bg-orange-700 text-white">
+                      Write Your First Story
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Trophy className="h-5 w-5 mr-2 text-orange-500" />
+                  Achievements & Badges
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mockUser.badges.map((badgeId) => {
-                    const badge = getBadgeInfo(badgeId);
-                    return (
-                      <div key={badgeId} className="flex items-center gap-3 p-3 border rounded-lg">
-                        <div className="text-2xl">{badge.icon}</div>
-                        <div>
-                          <div className="font-semibold text-sm">{badge.name}</div>
-                          <div className="text-xs text-gray-600">{badge.description}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Available Badges</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {["daily-writer", "community-favorite"].map((badgeId) => {
-                    const badge = getBadgeInfo(badgeId);
-                    return (
-                      <div key={badgeId} className="flex items-center gap-3 p-3 border rounded-lg opacity-50">
-                        <div className="text-2xl grayscale">{badge.icon}</div>
-                        <div>
-                          <div className="font-semibold text-sm">{badge.name}</div>
-                          <div className="text-xs text-gray-600">{badge.description}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Email Notifications</label>
-                  <p className="text-xs text-gray-600 mb-2">Receive updates about your stories and community</p>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">New hearts and comments</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Sample badges */}
+                  <div className="text-center p-4 border rounded-lg opacity-50">
+                    <div className="text-3xl mb-2">📝</div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">First Story</h4>
+                    <p className="text-xs text-gray-500">Write your first story</p>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">Weekly community highlights</span>
+                  <div className="text-center p-4 border rounded-lg opacity-50">
+                    <div className="text-3xl mb-2">💝</div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Heart Giver</h4>
+                    <p className="text-xs text-gray-500">Give 10 hearts to other stories</p>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg opacity-50">
+                    <div className="text-3xl mb-2">📚</div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">Storyteller</h4>
+                    <p className="text-xs text-gray-500">Contribute to 5 story chains</p>
                   </div>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium">Privacy</label>
-                  <p className="text-xs text-gray-600 mb-2">Control who can see your profile and stories</p>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">Public profile</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">Show contribution stats</span>
-                  </div>
-                </div>
-
-                <Button className="mt-4">Save Settings</Button>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
     </div>
   );
 }

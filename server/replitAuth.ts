@@ -8,7 +8,9 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
+const isLocalDevelopment = process.env.NODE_ENV === 'development' && process.env.REPLIT_DOMAINS === 'localhost:3000';
+
+if (!process.env.REPLIT_DOMAINS && !isLocalDevelopment) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 

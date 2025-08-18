@@ -39,12 +39,12 @@
   --radius: 1.5rem;
   
   /* Custom color variables for the storytelling theme */
-  --warm-teal: hsl(168, 38%, 55%);
-  --light-beige: hsl(45, 20%, 92%);
-  --warm-brown: hsl(35, 26%, 52%);
-  --soft-cream: hsl(45, 33%, 98%);
-  --story-gradient-start: hsl(177, 49%, 93%);
-  --story-gradient-end: hsl(35, 20%, 88%);
+  --warm-teal: hsl(24, 95%, 53%); /* Orange-600 equivalent */
+  --light-beige: hsl(25, 40%, 95%); /* Orange-50 equivalent */
+  --warm-brown: hsl(20, 90%, 48%); /* Orange-700 equivalent */
+  --soft-cream: hsl(25, 50%, 98%); /* Very light orange cream */
+  --story-gradient-start: hsl(25, 40%, 95%);
+  --story-gradient-end: hsl(205, 40%, 95%); /* Light blue for gradient */
 }
 
 .dark {
@@ -67,12 +67,12 @@
   --border: hsl(210, 5.2632%, 14.9020%);
   --input: hsl(207.6923, 27.6596%, 18.4314%);
   --ring: hsl(168, 38%, 55%);
-  --warm-teal: hsl(168, 38%, 45%);
-  --light-beige: hsl(45, 10%, 15%);
-  --warm-brown: hsl(35, 26%, 35%);
+  --warm-teal: hsl(24, 85%, 45%); /* Darker orange for dark theme */
+  --light-beige: hsl(25, 20%, 15%);
+  --warm-brown: hsl(20, 80%, 35%);
   --soft-cream: hsl(0, 0%, 8%);
-  --story-gradient-start: hsl(177, 20%, 12%);
-  --story-gradient-end: hsl(35, 15%, 10%);
+  --story-gradient-start: hsl(25, 20%, 12%);
+  --story-gradient-end: hsl(205, 20%, 10%);
 }
 
 @layer base {
@@ -124,5 +124,87 @@
   
   .shadow-story {
     box-shadow: 0 4px 6px -1px rgba(74, 155, 142, 0.1), 0 2px 4px -1px rgba(74, 155, 142, 0.06);
+  }
+
+  /* Button Animations */
+  .btn-animate {
+    @apply transition-all duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg active:scale-95;
+  }
+
+  /* Icon Animations */
+  .icon-animate {
+    @apply transition-all duration-200 ease-in-out transform hover:scale-110 hover:rotate-3;
+  }
+
+  /* Card Hover Effects */
+  .card-hover {
+    @apply transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl;
+  }
+
+  /* Story Chain Animation */
+  .story-appear {
+    animation: storyAppear 0.5s ease-out forwards;
+  }
+  
+  @keyframes storyAppear {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Floating Animation for Cookie Icon */
+  .float-animation {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /* Heart Pulse Animation */
+  .heart-pulse {
+    animation: heartPulse 0.3s ease-in-out;
+  }
+  
+  @keyframes heartPulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.3);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  /* Theme Toggle Animation */
+  .theme-toggle {
+    @apply transition-transform duration-300 ease-in-out hover:rotate-180;
+  }
+
+  /* Shimmer Loading Effect */
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 }
