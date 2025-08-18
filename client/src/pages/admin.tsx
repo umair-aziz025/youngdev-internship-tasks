@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { UserProfile } from '@/components/user-profile';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { PageLoader } from '@/components/loading-spinner';
 
 interface User {
   id: number;
@@ -20,12 +21,13 @@ interface User {
 }
 
 export default function AdminPanel() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
+  // All hooks must be called before conditional returns
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       setLocation('/');
@@ -116,8 +118,59 @@ export default function AdminPanel() {
   const activeUsers = users.filter(u => u.status === 'active');
   const suspendedUsers = users.filter(u => u.status === 'suspended');
 
+  // Show loading while authentication is being determined
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  // Redirect non-admin users
   if (!user || user.role !== 'admin') {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl float-animation">
+                  <Cookie className="w-5 h-5 icon-animate" />
+                </div>
+                <div>
+                  <h1 className="font-serif font-semibold text-xl text-gray-800 dark:text-white">
+                    Cookie's
+                  </h1>
+                  <p className="font-serif text-sm text-gray-600 dark:text-gray-300 -mt-1">
+                    Someone Somewhere
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    Inspired by Nemrah Ahmed
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="py-8 text-center">
+              <Shield className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                You don't have permission to access the admin panel.
+              </p>
+              <Button 
+                onClick={() => setLocation('/')}
+                className="bg-orange-600 text-white hover:bg-orange-700"
+              >
+                Go Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
