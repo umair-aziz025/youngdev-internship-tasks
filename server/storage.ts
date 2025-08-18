@@ -1,5 +1,9 @@
 import { type User, type InsertUser, type Room, type InsertRoom, type Story, type InsertStory, type StoryChain, type CommunityStats, type Theme, type CookiesPick } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+import { users, rooms, stories, hearts, themes, cookiesPicks } from '@shared/schema';
+import { eq, desc, sql, and } from 'drizzle-orm';
 
 export interface IStorage {
   // Users
@@ -296,4 +300,248 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  private db: any;
+
+  constructor() {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL not found in environment variables");
+    }
+    const connection = neon(process.env.DATABASE_URL);
+    this.db = drizzle(connection);
+    this.initializeData();
+  }
+
+  private async initializeData() {
+    try {
+      // Check if themes exist, if not create them
+      const existingThemes = await this.db.select().from(themes).limit(1);
+      if (existingThemes.length === 0) {
+        const sampleThemes = [
+          {
+            title: "Jannat Kay Pattay Vibes",
+            description: "Stories about finding home in people, not places",
+            prompt: "Someone somewhere is discovering that home isn't a place, but the people who make your heart feel at peace...",
+            isDaily: true,
+            isActive: true,
+          },
+          {
+            title: "Nemrah Ahmed Inspired",
+            description: "Mystery and family secrets",
+            prompt: "Someone somewhere just discovered a hidden truth that changes everything they thought they knew...",
+            isDaily: false,
+            isActive: true,
+          },
+        ];
+        
+        await this.db.insert(themes).values(sampleThemes);
+      }
+    } catch (error) {
+      console.log("Failed to initialize themes:", error);
+    }
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async updateUserStats(userId: string, contributions?: number, hearts?: number): Promise<void> {
+    const updates: any = {};
+    if (contributions !== undefined) {
+      updates.contributionsCount = sql`${users.contributionsCount} + ${contributions}`;
+    }
+    if (hearts !== undefined) {
+      updates.heartsReceived = sql`${users.heartsReceived} + ${hearts}`;
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      await this.db.update(users).set(updates).where(eq(users.id, userId));
+    }
+  }
+
+  // Rooms
+  async getRoom(id: string): Promise<Room | undefined> {
+    const result = await this.db.select().from(rooms).where(eq(rooms.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getRoomByCode(code: string): Promise<Room | undefined> {
+    const result = await this.db.select().from(rooms).where(eq(rooms.code, code)).limit(1);
+    return result[0];
+  }
+
+  async createRoom(room: InsertRoom): Promise<Room> {
+    const result = await this.db.insert(rooms).values(room).returning();
+    return result[0];
+  }
+
+  async getPublicRooms(): Promise<Room[]> {
+    return await this.db.select().from(rooms).where(eq(rooms.isPrivate, false)).orderBy(desc(rooms.createdAt));
+  }
+
+  async updateRoomMemberCount(roomId: string, count: number): Promise<void> {
+    await this.db.update(rooms).set({ memberCount: count }).where(eq(rooms.id, roomId));
+  }
+
+  // Stories
+  async getStory(id: string): Promise<Story | undefined> {
+    const result = await this.db.select().from(stories).where(eq(stories.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createStory(story: InsertStory): Promise<Story> {
+    // Get next sequence number for this chain
+    const maxSeq = await this.db.select({ max: sql<number>`max(${stories.sequence})` })
+      .from(stories)
+      .where(eq(stories.chainId, story.chainId));
+    
+    const sequence = (maxSeq[0]?.max || 0) + 1;
+    
+    const result = await this.db.insert(stories).values({
+      ...story,
+      sequence
+    }).returning();
+    
+    return result[0];
+  }
+
+  async getStoriesByChain(chainId: number): Promise<Story[]> {
+    return await this.db.select().from(stories)
+      .where(eq(stories.chainId, chainId))
+      .orderBy(stories.sequence);
+  }
+
+  async getStoriesByRoom(roomId: string): Promise<Story[]> {
+    return await this.db.select().from(stories)
+      .where(eq(stories.roomId, roomId))
+      .orderBy(desc(stories.createdAt));
+  }
+
+  async getLatestStoryChains(limit = 10): Promise<StoryChain[]> {
+    const chainsData = await this.db
+      .select({
+        chainId: stories.chainId,
+        storyCount: sql<number>`count(*)`,
+        lastUpdated: sql<Date>`max(${stories.createdAt})`,
+        stories: sql<Story[]>`json_agg(
+          json_build_object(
+            'id', ${stories.id},
+            'chainId', ${stories.chainId},
+            'roomId', ${stories.roomId},
+            'content', ${stories.content},
+            'authorId', ${stories.authorId},
+            'authorName', ${stories.authorName},
+            'sequence', ${stories.sequence},
+            'hearts', ${stories.hearts},
+            'comments', ${stories.comments},
+            'createdAt', ${stories.createdAt}
+          ) ORDER BY ${stories.sequence}
+        )`
+      })
+      .from(stories)
+      .groupBy(stories.chainId)
+      .orderBy(desc(sql`max(${stories.createdAt})`))
+      .limit(limit);
+
+    return chainsData.map(chain => ({
+      chainId: chain.chainId,
+      storyCount: chain.storyCount,
+      lastUpdated: chain.lastUpdated,
+      stories: chain.stories
+    }));
+  }
+
+  async toggleHeart(storyId: string, userId: string): Promise<boolean> {
+    const existing = await this.db.select().from(hearts)
+      .where(and(eq(hearts.storyId, storyId), eq(hearts.userId, userId)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Remove heart
+      await this.db.delete(hearts)
+        .where(and(eq(hearts.storyId, storyId), eq(hearts.userId, userId)));
+      
+      await this.db.update(stories)
+        .set({ hearts: sql`${stories.hearts} - 1` })
+        .where(eq(stories.id, storyId));
+      
+      return false;
+    } else {
+      // Add heart
+      await this.db.insert(hearts).values({ storyId, userId });
+      
+      await this.db.update(stories)
+        .set({ hearts: sql`${stories.hearts} + 1` })
+        .where(eq(stories.id, storyId));
+      
+      return true;
+    }
+  }
+
+  async getNextChainId(): Promise<number> {
+    const result = await this.db.select({ max: sql<number>`coalesce(max(${stories.chainId}), 0) + 1` }).from(stories);
+    return result[0]?.max || 1;
+  }
+
+  // Themes
+  async getDailyTheme(): Promise<Theme | undefined> {
+    const result = await this.db.select().from(themes)
+      .where(and(eq(themes.isDaily, true), eq(themes.isActive, true)))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllThemes(): Promise<Theme[]> {
+    return await this.db.select().from(themes).where(eq(themes.isActive, true));
+  }
+
+  // Community
+  async getCommunityStats(): Promise<CommunityStats> {
+    const [storiesCount, usersCount, heartsCount] = await Promise.all([
+      this.db.select({ count: sql<number>`count(*)` }).from(stories),
+      this.db.select({ count: sql<number>`count(*)` }).from(users),
+      this.db.select({ count: sql<number>`sum(${stories.hearts})` }).from(stories)
+    ]);
+
+    // Daily contributions (stories from today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dailyContributions = await this.db.select({ count: sql<number>`count(*)` })
+      .from(stories)
+      .where(sql`${stories.createdAt} >= ${today}`);
+
+    return {
+      totalStories: storiesCount[0]?.count || 0,
+      activeUsers: usersCount[0]?.count || 0,
+      totalHearts: heartsCount[0]?.count || 0,
+      dailyContributions: dailyContributions[0]?.count || 0,
+    };
+  }
+
+  async getCookiesPicks(): Promise<CookiesPick[]> {
+    return await this.db.select().from(cookiesPicks)
+      .where(eq(cookiesPicks.isFeatured, true))
+      .orderBy(desc(cookiesPicks.createdAt));
+  }
+}
+
+// Use database storage if DATABASE_URL is available, otherwise fall back to memory
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();

@@ -89,6 +89,7 @@ export const insertRoomSchema = createInsertSchema(rooms).omit({
 
 export const insertStorySchema = createInsertSchema(stories).omit({
   id: true,
+  sequence: true,
   hearts: true,
   comments: true,
   createdAt: true,
