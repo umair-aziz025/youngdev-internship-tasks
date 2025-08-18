@@ -1,0 +1,31 @@
+chunk-WERSD76P.js?v=6a1045ca:14032 The above error occurred in the <AdminPanel> component:
+
+    at AdminPanel (http://localhost:5000/src/pages/admin.tsx?t=1755511660524:31:28)
+    at Route (http://localhost:5000/@fs/C:/Users/stxrdust/Downloads/CookieSomewherev2/node_modules/.vite/deps/wouter.js?v=6a1045ca:323:16)
+    at Switch (http://localhost:5000/@fs/C:/Users/stxrdust/Downloads/CookieSomewherev2/node_modules/.vite/deps/wouter.js?v=6a1045ca:379:17)
+    at Router (http://localhost:5000/src/App.tsx?t=1755511677973&v=tIxdY898qfXvaLO4u9NNm:36:42)
+    at Provider (http://localhost:5000/@fs/C:/Users/stxrdust/Downloads/CookieSomewherev2/node_modules/.vite/deps/chunk-PLT6GTVM.js?v=6a1045ca:38:15)
+    at TooltipProvider (http://localhost:5000/@fs/C:/Users/stxrdust/Downloads/CookieSomewherev2/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=6a1045ca:62:5)
+    at ThemeProvider (http://localhost:5000/src/contexts/theme-context.tsx:26:3)
+    at QueryClientProvider (http://localhost:5000/@fs/C:/Users/stxrdust/Downloads/CookieSomewherev2/node_modules/.vite/deps/@tanstack_react-query.js?v=6a1045ca:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError	@	chunk-WERSD76P.js?v=6a1045ca:14032
+update.callback	@	chunk-WERSD76P.js?v=6a1045ca:14052
+callCallback	@	chunk-WERSD76P.js?v=6a1045ca:11248
+commitUpdateQueue	@	chunk-WERSD76P.js?v=6a1045ca:11265
+commitLayoutEffectOnFiber	@	chunk-WERSD76P.js?v=6a1045ca:17093
+commitLayoutMountEffects_complete	@	chunk-WERSD76P.js?v=6a1045ca:17980
+commitLayoutEffects_begin	@	chunk-WERSD76P.js?v=6a1045ca:17969
+commitLayoutEffects	@	chunk-WERSD76P.js?v=6a1045ca:17920
+commitRootImpl	@	chunk-WERSD76P.js?v=6a1045ca:19353
+commitRoot	@	chunk-WERSD76P.js?v=6a1045ca:19277
+finishConcurrentRender	@	chunk-WERSD76P.js?v=6a1045ca:18760
+performConcurrentWorkOnRoot	@	chunk-WERSD76P.js?v=6a1045ca:18718
+workLoop	@	chunk-WERSD76P.js?v=6a1045ca:197
+flushWork	@	chunk-WERSD76P.js?v=6a1045ca:176
+performWorkUntilDeadline	@	chunk-WERSD76P.js?v=6a1045ca:384
+chunk-WERSD76P.js?v=6a1045ca:19413 Uncaught TypeError: users.filter is not a function
+    at AdminPanel (admin.tsx:115:30)
