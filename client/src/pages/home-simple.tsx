@@ -26,8 +26,8 @@ export default function Home() {
   const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"global" | "themed">("global");
 
-  // ALL HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
-  // Initialize WebSocket connection - conditional hook call handled inside the hook
+  // All hooks must be called before conditional returns
+  // Initialize WebSocket connection
   const websocketConnection = currentUser ? useWebSocket(currentUser.id, "global") : null;
 
   // Fetch story chains
@@ -63,8 +63,8 @@ export default function Home() {
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to add your story. Please try again.",
+        title: "Failed to submit story",
+        description: "Please try again or check your connection.",
         variant: "destructive",
       });
     },
@@ -85,34 +85,21 @@ export default function Home() {
     );
   }
 
-  const handleStorySubmit = async (content: string, chainId?: number) => {
-    if (!content.trim()) return;
+  const handleSubmitStory = (content: string) => {
+    if (!currentUser) return;
 
-    try {
-      // Get next chain ID if starting a new chain
-      const finalChainId = chainId || (await api.getNextChainId());
-      
-      // Determine sequence number
-      const existingChain = chainId ? storyChains.find(c => c.chainId === chainId) : null;
-      const sequence = existingChain ? existingChain.stories.length + 1 : 1;
+    const currentChain = storyChains[0];
 
-      await submitStoryMutation.mutateAsync({
-        chainId: finalChainId,
-        content,
-        roomId: null, // Global room
-        authorId: currentUser.id,
-        authorName: currentUser.username || "Anonymous",
-      });
-    } catch (error) {
-      console.error("Failed to submit story:", error);
-    }
+    submitStoryMutation.mutate({
+      content,
+      authorId: currentUser.id,
+      authorName: currentUser.username || currentUser.email || "Anonymous",
+      chainId: currentChain?.chainId || 1,
+      roomId: null,
+    });
   };
 
-  const currentStoryChain = activeTab === "global" 
-    ? storyChains.find(chain => !chain.roomId)
-    : storyChains.find(chain => chain.roomId === `theme-${dailyTheme?.id}`);
-
-  const isChainComplete = currentStoryChain && currentStoryChain.stories.length >= 10;
+  const currentStoryChain = storyChains[0]; // Use first available chain for now
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
@@ -172,33 +159,6 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Banner */}
-        <div className="text-center mb-8">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-4xl font-bold font-serif text-gray-800 dark:text-white mb-4">
-              Welcome to Cookie's Collaborative Stories
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-              Join our community in creating beautiful stories together, one chapter at a time. 
-              Every contribution adds magic to our shared narratives.
-            </p>
-            <div className="flex items-center justify-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="w-4 h-4" />
-                <span>{communityStats?.totalStories || 0} Stories</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4" />
-                <span>{communityStats?.activeUsers || 0} Writers</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Heart className="w-4 h-4" />
-                <span>{communityStats?.totalHearts || 0} Hearts</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Story Type Toggle */}
         <div className="flex justify-center mb-8">
           <div className="inline-flex rounded-lg bg-white/60 dark:bg-gray-800/60 p-1 backdrop-blur-sm border border-orange-200/30 dark:border-gray-700/30">
@@ -259,7 +219,7 @@ export default function Home() {
                   <StoryChain
                     chain={currentStoryChain}
                     currentUser={currentUser}
-                    onContinue={(content) => handleStorySubmit(content, currentStoryChain.chainId)}
+                    onContinue={handleSubmitStory}
                   />
                 ) : (
                   <div className="p-8 text-center">
@@ -278,67 +238,20 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            {/* Story Progress Indicator */}
-            {currentStoryChain && (
-              <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Story Progress</span>
-                    <span className="text-sm text-blue-600 dark:text-blue-300">
-                      {currentStoryChain.stories.length} / 10 parts
-                    </span>
-                  </div>
-                  <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(currentStoryChain.stories.length / 10) * 100}%` }}
-                    ></div>
-                  </div>
-                  {isChainComplete && (
-                    <div className="mt-3 flex items-center justify-center space-x-2">
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        🎉 Story Complete!
-                      </Badge>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Story Input */}
-            {!isChainComplete && (
-              <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <StoryInput
-                    user={currentUser}
-                    onSubmit={(content) => handleStorySubmit(content, currentStoryChain?.chainId)}
-                    isSubmitting={submitStoryMutation.isPending}
-                    placeholder={
-                      activeTab === "global"
-                        ? "Continue the global story..."
-                        : dailyTheme
-                        ? `Write a story inspired by "${dailyTheme.title}"...`
-                        : "Write your story..."
-                    }
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Story Guidelines */}
-            <Card className="bg-gradient-to-r from-orange-50 to-pink-50 dark:from-orange-900/20 dark:to-pink-900/20 border-orange-200 dark:border-orange-700">
+            <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-200 mb-3 flex items-center">
-                  <Book className="h-5 w-5 mr-2" />
-                  Storytelling Guidelines
-                </h3>
-                <div className="space-y-2 text-sm text-orange-700 dark:text-orange-300">
-                  <p>• Keep contributions between 50-500 words for the perfect flow</p>
-                  <p>• Build upon the previous story naturally and creatively</p>
-                  <p>• Use descriptive language to paint vivid scenes</p>
-                  <p>• Keep content appropriate and welcoming for all readers</p>
-                  <p>• Let your imagination soar while respecting others' contributions</p>
-                </div>
+                <StoryInput
+                  onSubmit={handleSubmitStory}
+                  isSubmitting={submitStoryMutation.isPending}
+                  placeholder={
+                    activeTab === "global"
+                      ? "Continue the global story..."
+                      : dailyTheme
+                      ? `Write a story inspired by "${dailyTheme.title}"...`
+                      : "Write your story..."
+                  }
+                />
               </CardContent>
             </Card>
           </div>
@@ -350,89 +263,9 @@ export default function Home() {
 
             {/* Room Manager */}
             <RoomManager currentUser={currentUser} />
-
-            {/* Quick Actions */}
-            <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Quick Actions
-                </h3>
-                <div className="space-y-3">
-                  <Link href="/community" className="block">
-                    <Button variant="outline" className="w-full justify-start" size="sm">
-                      <Crown className="h-4 w-4 mr-2" />
-                      Cookie's Picks
-                    </Button>
-                  </Link>
-                  <Link href="/rooms" className="block">
-                    <Button variant="outline" className="w-full justify-start" size="sm">
-                      <Users className="h-4 w-4 mr-2" />
-                      Join Story Room
-                    </Button>
-                  </Link>
-                  <Link href="/profile" className="block">
-                    <Button variant="outline" className="w-full justify-start" size="sm">
-                      <User className="h-4 w-4 mr-2" />
-                      My Profile
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Today's Writer Spotlight */}
-            <Card className="shadow-lg border-0 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-700">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center">
-                  <Heart className="h-5 w-5 mr-2" />
-                  Writer Spotlight
-                </h3>
-                <p className="text-purple-700 dark:text-purple-300 text-sm text-center py-4">
-                  Every story matters and every writer brings something special to our community. 
-                  Keep writing and inspiring others!
-                </p>
-                <div className="text-center">
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-200">
-                    ✨ You're Amazing ✨
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
-
-      {/* Footer CTA */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <Card className="bg-gradient-to-r from-orange-100 to-blue-100 dark:from-orange-900/30 dark:to-blue-900/30 border-orange-200 dark:border-orange-700 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <div className="max-w-2xl mx-auto">
-              <h3 className="text-2xl font-serif font-bold text-orange-800 dark:text-orange-200 mb-4">
-                Join Our Storytelling Community
-              </h3>
-              <p className="text-orange-700 dark:text-orange-300 mb-6 leading-relaxed">
-                Every great story starts with a single word. Whether you're continuing an existing tale 
-                or starting something entirely new, your creativity helps build our shared literary universe.
-              </p>
-              <div className="flex items-center justify-center space-x-6 text-sm">
-                <div className="flex items-center space-x-2">
-                  <MessageCircle className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 dark:text-orange-300">Share Stories</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Heart className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 dark:text-orange-300">Give Hearts</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4 text-orange-600" />
-                  <span className="text-orange-700 dark:text-orange-300">Build Community</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

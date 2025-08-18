@@ -46,3 +46,16 @@ Preferred communication style: Simple, everyday language.
 - **Development Tools**: Replit integration with development banner and cartographer plugin
 
 The architecture follows a modern full-stack approach with clear separation of concerns, type safety throughout the stack, and real-time capabilities for collaborative features. The design prioritizes user experience with a warm, storytelling-themed aesthetic and responsive design patterns.
+
+## Recent Bug Fixes (January 2025)
+
+### React Hooks Order Violation Fix
+- **Issue**: Critical white page crashes caused by React hooks being called after conditional returns
+- **Solution**: Moved all useQuery, useMutation, and custom hooks to the top of components before any conditional logic
+- **Files Fixed**: 
+  - Community page (client/src/pages/community.tsx)
+  - Profile page (client/src/pages/profile.tsx) 
+  - Rooms page (client/src/pages/rooms.tsx)
+  - Admin page (client/src/pages/admin.tsx)
+  - Home page (client/src/pages/home.tsx) - restored full functionality with proper hooks order
+- **Result**: All pages now load correctly without white screen crashes, navigation works properly
