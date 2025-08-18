@@ -16,9 +16,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // OpenAI client setup
-  const openai = new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY 
-  });
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  console.log('OpenAI API Key status:', apiKey && apiKey.length > 0 ? `Present (${apiKey.length} chars)` : 'Missing or empty');
+  let openai: OpenAI | null = null;
+  
+  if (apiKey && apiKey.length > 0) {
+    try {
+      openai = new OpenAI({ 
+        apiKey: apiKey 
+      });
+      console.log('OpenAI client initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize OpenAI client:', error);
+    }
+  } else {
+    console.log('OpenAI client not initialized - API key missing or empty');
+  }
   
   // Multer setup for file uploads
   const upload = multer({ storage: multer.memoryStorage() });
@@ -262,6 +275,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Routes
   app.post('/api/ai/transcribe', upload.single('audio'), async (req: any, res) => {
     try {
+      if (!openai) {
+        return res.status(503).json({ message: 'AI features unavailable - OpenAI API key not configured' });
+      }
+
       if (!req.file) {
         return res.status(400).json({ message: 'No audio file provided' });
       }
@@ -280,6 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/ai/continue-story', async (req, res) => {
     try {
+      if (!openai) {
+        return res.status(503).json({ message: 'AI features unavailable - OpenAI API key not configured' });
+      }
+
       const { storyContext } = req.body;
       
       if (!storyContext || typeof storyContext !== 'string') {
