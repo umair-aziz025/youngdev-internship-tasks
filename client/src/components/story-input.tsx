@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Cookie, Plus } from "lucide-react";
+import { VoiceInput } from "@/components/voice-input";
+import { AIAssist } from "@/components/ai-assist";
 import type { User } from "@shared/schema";
 
 interface StoryInputProps {
@@ -10,13 +13,15 @@ interface StoryInputProps {
   isSubmitting: boolean;
   user: User;
   placeholder?: string;
+  currentStory?: string;
 }
 
 export default function StoryInput({ 
   onSubmit, 
   isSubmitting, 
   user, 
-  placeholder = "Continue the story... 'Someone somewhere is dancing in the rain because...'" 
+  placeholder = "Continue the story... 'Someone somewhere is dancing in the rain because...'",
+  currentStory = ""
 }: StoryInputProps) {
   const [content, setContent] = useState("");
   
@@ -34,8 +39,16 @@ export default function StoryInput({
     }
   };
 
+  const handleVoiceTranscription = (text: string) => {
+    setContent(prev => prev + (prev ? ' ' : '') + text);
+  };
+
+  const handleAISuggestion = (suggestion: string) => {
+    setContent(suggestion);
+  };
+
   return (
-    <Card className="bg-white shadow-story">
+    <Card className="bg-white dark:bg-gray-800 shadow-story">
       <CardContent className="p-6">
         <div className="flex items-start space-x-4">
           <div className="w-12 h-12 bg-warm-teal rounded-full flex items-center justify-center text-white flex-shrink-0">
@@ -47,14 +60,34 @@ export default function StoryInput({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full p-4 border border-light-beige rounded-xl resize-none focus:ring-2 focus:ring-warm-teal focus:border-transparent"
+              className="w-full p-4 border border-light-beige dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-warm-teal focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               rows={3}
               maxLength={280}
             />
-            <div className="flex justify-between items-center mt-4">
-              <span className="text-sm text-gray-500">
+            
+            {/* Advanced Features */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex items-center space-x-3">
+                <VoiceInput 
+                  onTranscription={handleVoiceTranscription}
+                  isDisabled={isSubmitting}
+                />
+                <Separator orientation="vertical" className="h-6" />
+                <AIAssist 
+                  currentStory={currentStory}
+                  onSuggestion={handleAISuggestion}
+                  isDisabled={isSubmitting}
+                />
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {280 - content.length} characters left
               </span>
+            </div>
+
+            <div className="flex justify-between items-center mt-4">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Tip: Press Ctrl+Enter (or Cmd+Enter) to submit quickly
+              </p>
               <Button 
                 onClick={handleSubmit}
                 disabled={!content.trim() || isSubmitting}
@@ -73,9 +106,6 @@ export default function StoryInput({
                 )}
               </Button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Tip: Press Ctrl+Enter (or Cmd+Enter) to submit quickly
-            </p>
           </div>
         </div>
       </CardContent>

@@ -1,5 +1,31 @@
-import { apiRequest } from "./queryClient";
 import type { InsertUser, InsertRoom, InsertStory, User, Room } from "@shared/schema";
+
+// Custom API request function with authentication
+async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown
+): Promise<Response> {
+  // For MVP, use a mock user ID. In production, this would come from auth context
+  const headers = {
+    "Content-Type": "application/json",
+    "x-user-id": "user-1", // Mock user ID
+  };
+
+  const res = await fetch(url, {
+    method,
+    headers: data ? headers : { "x-user-id": "user-1" },
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
+  }
+  
+  return res;
+}
 
 export const api = {
   // Users
@@ -39,35 +65,30 @@ export const api = {
     const response = await apiRequest("POST", `/api/stories/${storyId}/heart`);
     return response.json();
   },
+
+  // Voice features
+  async transcribeAudio(audioBlob: Blob): Promise<{ text: string }> {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+    
+    const res = await fetch('/api/voice/transcribe', {
+      method: 'POST',
+      headers: { "x-user-id": "user-1" },
+      body: formData,
+    });
+    
+    return res.json();
+  },
+
+  // AI features
+  async generateStoryContinuation(context: string): Promise<{ continuation: string }> {
+    const response = await apiRequest("POST", "/api/ai/continue-story", { context });
+    return response.json();
+  },
+
+  // Export features
+  async exportStoryChain(chainId: number, format: 'pdf' | 'image'): Promise<{ url: string }> {
+    const response = await apiRequest("GET", `/api/export/chain/${chainId}?format=${format}`);
+    return response.json();
+  },
 };
-
-// Add user ID header for authenticated requests
-const originalApiRequest = apiRequest;
-export { originalApiRequest as baseApiRequest };
-
-// Override apiRequest to include user authentication header
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown
-): Promise<Response> {
-  // For MVP, use a mock user ID. In production, this would come from auth context
-  const headers = {
-    "Content-Type": "application/json",
-    "x-user-id": "user-1", // Mock user ID
-  };
-
-  const res = await fetch(url, {
-    method,
-    headers: data ? headers : { "x-user-id": "user-1" },
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-  
-  return res;
-}

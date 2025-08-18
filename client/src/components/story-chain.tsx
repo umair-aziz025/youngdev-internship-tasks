@@ -8,6 +8,7 @@ import { Heart, MessageCircle, Share, Bookmark, User } from "lucide-react";
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ExportStory } from "@/components/export-story";
 import type { StoryChain as StoryChainType, User as UserType } from "@shared/schema";
 
 interface StoryChainProps {
@@ -61,20 +62,23 @@ export default function StoryChain({ chain, currentUser, onContinue }: StoryChai
   };
 
   return (
-    <Card className="bg-white shadow-story border border-light-beige/30 overflow-hidden">
+    <Card className="bg-white dark:bg-gray-800 shadow-story border border-light-beige/30 dark:border-gray-700/30 overflow-hidden">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <Badge className="bg-warm-teal/20 text-warm-teal hover:bg-warm-teal/30">
               Chain #{chain.chainId}
             </Badge>
-            <span className="text-gray-500 text-sm">
+            <span className="text-gray-500 dark:text-gray-400 text-sm">
               Started {new Date(chain.createdAt).toLocaleDateString()}
             </span>
           </div>
-          <Button variant="ghost" size="icon">
-            <Bookmark className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <ExportStory chainId={chain.chainId} storyTitle={`Story Chain #${chain.chainId}`} />
+            <Button variant="ghost" size="icon">
+              <Bookmark className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Story Chain Lines */}

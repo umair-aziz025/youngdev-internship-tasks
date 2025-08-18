@@ -13,6 +13,8 @@ import RoomManager from "@/components/room-manager";
 import CommunityStats from "@/components/community-stats";
 import { Cookie, Calendar, Users, Plus, Menu, User, Bookmark, Heart, MessageCircle, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfile } from "@/components/user-profile";
 import type { StoryChain as StoryChainType, Theme, CommunityStats as CommunityStatsType } from "@shared/schema";
 
 // Mock user for MVP - in production this would come from auth
@@ -21,8 +23,12 @@ const mockUser = {
   username: "Sarah",
   email: "sarah@example.com",
   avatar: "",
-  contributionsCount: 0,
-  heartsReceived: 0,
+  contributionsCount: 12,
+  heartsReceived: 45,
+  experiencePoints: 340,
+  level: 4,
+  badges: ["first-story", "heart-giver", "storyteller"],
+  preferences: {},
   createdAt: new Date(),
 };
 
@@ -96,9 +102,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-soft-cream">
+    <div className="min-h-screen bg-soft-cream dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-light-beige/50 sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             {/* Logo and Branding */}
@@ -122,14 +128,12 @@ export default function Home() {
 
             {/* User Actions */}
             <div className="flex items-center space-x-3">
+              <ThemeToggle />
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
               </Button>
               <div className="hidden md:flex items-center space-x-3">
-                <div className="w-8 h-8 bg-warm-teal rounded-full flex items-center justify-center text-white text-sm">
-                  <User className="w-4 h-4" />
-                </div>
-                <span className="text-sm text-gray-600">{currentUser.username}</span>
+                <UserProfile user={currentUser} compact />
               </div>
             </div>
           </div>
@@ -153,6 +157,7 @@ export default function Home() {
               onSubmit={handleStorySubmit}
               isSubmitting={submitStoryMutation.isPending}
               user={currentUser}
+              currentStory={storyChains.length > 0 ? storyChains[0].stories.map(s => s.content).join(' ') : ''}
             />
 
             {/* Quick Actions */}

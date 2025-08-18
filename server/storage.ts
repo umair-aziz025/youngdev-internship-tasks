@@ -99,8 +99,13 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      avatar: insertUser.avatar || "",
       contributionsCount: 0,
       heartsReceived: 0,
+      experiencePoints: 0,
+      level: 1,
+      badges: [],
+      preferences: {},
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -132,6 +137,9 @@ export class MemStorage implements IStorage {
       ...insertRoom,
       id,
       code,
+      isPrivate: insertRoom.isPrivate || false,
+      isThemed: insertRoom.isThemed || false,
+      theme: insertRoom.theme || "",
       memberCount: 1,
       createdAt: new Date(),
     };
@@ -163,6 +171,7 @@ export class MemStorage implements IStorage {
     const story: Story = {
       ...insertStory,
       id,
+      roomId: insertStory.roomId || null,
       hearts: 0,
       comments: 0,
       createdAt: new Date(),

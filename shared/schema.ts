@@ -10,6 +10,10 @@ export const users = pgTable("users", {
   avatar: text("avatar").default(""),
   contributionsCount: integer("contributions_count").notNull().default(0),
   heartsReceived: integer("hearts_received").notNull().default(0),
+  experiencePoints: integer("experience_points").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  badges: text("badges").array().default([]),
+  preferences: json("preferences").default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -69,6 +73,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   contributionsCount: true,
   heartsReceived: true,
+  experiencePoints: true,
+  level: true,
+  badges: true,
+  preferences: true,
   createdAt: true,
 });
 
@@ -110,7 +118,7 @@ export type CookiesPick = typeof cookiesPicks.$inferSelect;
 // API Response types
 export interface StoryChain {
   chainId: number;
-  roomId?: string;
+  roomId?: string | null;
   stories: Story[];
   totalHearts: number;
   totalComments: number;

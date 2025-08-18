@@ -4,6 +4,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertUserSchema, insertRoomSchema, insertStorySchema } from "@shared/schema";
 import { z } from "zod";
+import OpenAI from "openai";
+import multer from "multer";
 
 interface WebSocketClient extends WebSocket {
   userId?: string;
@@ -12,6 +14,14 @@ interface WebSocketClient extends WebSocket {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // OpenAI client setup
+  const openai = new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY 
+  });
+  
+  // Multer setup for file uploads
+  const upload = multer({ storage: multer.memoryStorage() });
   
   // WebSocket setup
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
@@ -246,6 +256,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(picks);
     } catch (error) {
       res.status(500).json({ message: 'Server error', error });
+    }
+  });
+
+  // AI Routes
+  app.post('/api/ai/transcribe', upload.single('audio'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No audio file provided' });
+      }
+
+      const transcription = await openai.audio.transcriptions.create({
+        file: new File([req.file.buffer], 'audio.wav', { type: 'audio/wav' }),
+        model: 'whisper-1',
+      });
+
+      res.json({ text: transcription.text });
+    } catch (error) {
+      console.error('Transcription error:', error);
+      res.status(500).json({ message: 'Transcription failed', error });
+    }
+  });
+
+  app.post('/api/ai/continue-story', async (req, res) => {
+    try {
+      const { storyContext } = req.body;
+      
+      if (!storyContext || typeof storyContext !== 'string') {
+        return res.status(400).json({ message: 'Story context is required' });
+      }
+
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a creative writing assistant for a collaborative storytelling platform inspired by Nemrah Ahmed's work. Generate a natural, engaging continuation for the story that follows the established tone and style. Keep continuations between 50-150 words, maintaining the narrative flow. Focus on emotional depth and character development."
+          },
+          {
+            role: "user",
+            content: `Continue this story naturally: "${storyContext}"`
+          }
+        ],
+        max_tokens: 200,
+        temperature: 0.8,
+      });
+
+      const continuation = completion.choices[0].message.content?.trim() || '';
+      res.json({ continuation });
+    } catch (error) {
+      console.error('Story continuation error:', error);
+      res.status(500).json({ message: 'Story continuation failed', error });
+    }
+  });
+
+  // Export Routes
+  app.post('/api/export/pdf', async (req, res) => {
+    try {
+      const { chainId, title } = req.body;
+      
+      if (!chainId) {
+        return res.status(400).json({ message: 'Chain ID is required' });
+      }
+
+      const stories = await storage.getStoriesByChain(parseInt(chainId));
+      const fullStory = stories.map(story => story.content).join(' ');
+      
+      // For now, return a simple text response
+      // In a real implementation, you'd use a PDF generation library like puppeteer
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${title || 'story'}.pdf"`);
+      res.send(`PDF Export\n\nTitle: ${title || 'Untitled Story'}\n\nContent:\n${fullStory}`);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      res.status(500).json({ message: 'PDF export failed', error });
+    }
+  });
+
+  app.post('/api/export/image', async (req, res) => {
+    try {
+      const { chainId, title } = req.body;
+      
+      if (!chainId) {
+        return res.status(400).json({ message: 'Chain ID is required' });
+      }
+
+      const stories = await storage.getStoriesByChain(parseInt(chainId));
+      const fullStory = stories.map(story => story.content).join(' ');
+      
+      // For now, return a simple text response
+      // In a real implementation, you'd use a canvas/image generation library
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `attachment; filename="${title || 'story'}.png"`);
+      res.send(`Image Export\n\nTitle: ${title || 'Untitled Story'}\n\nContent:\n${fullStory}`);
+    } catch (error) {
+      console.error('Image export error:', error);
+      res.status(500).json({ message: 'Image export failed', error });
     }
   });
 
