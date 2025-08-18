@@ -314,7 +314,7 @@ export function setupAuth(app: Express) {
         username: users.username,
         email: users.email,
         role: users.role,
-        status: users.status,
+
         contributionsCount: users.contributionsCount,
         experiencePoints: users.experiencePoints,
         level: users.level,

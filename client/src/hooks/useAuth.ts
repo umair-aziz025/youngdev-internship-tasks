@@ -39,7 +39,7 @@ export function useAuth() {
         throw new Error("No token available");
       }
 
-      const response = await fetch("/api/auth/me", {
+      const response = await fetch("/api/auth/user", {
         headers: {
           "Authorization": `Bearer ${token}`,
         },
@@ -54,7 +54,7 @@ export function useAuth() {
       }
 
       const data = await response.json();
-      return data.user;
+      return data;
     },
     enabled: !!token && isInitialized,
     retry: false,

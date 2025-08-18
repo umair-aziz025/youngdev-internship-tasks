@@ -65,10 +65,16 @@ export default function AdminPanel() {
       });
       if (response.ok) {
         const data = await response.json();
-        setUsers(data);
+        // Handle both response formats: direct array or { users: array }
+        const usersArray = Array.isArray(data) ? data : (data.users && Array.isArray(data.users) ? data.users : []);
+        setUsers(usersArray);
+      } else {
+        console.error("Failed to fetch users:", response.status, response.statusText);
+        setUsers([]);
       }
     } catch (error) {
       console.error("Failed to fetch users:", error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -146,12 +152,29 @@ export default function AdminPanel() {
     }
   };
 
-  const pendingUsers = users.filter((u) => u.status === "pending");
-  const activeUsers = users.filter((u) => u.status === "active");
-  const suspendedUsers = users.filter((u) => u.status === "suspended");
+  // Ensure users is an array before filtering
+  const safeUsers = Array.isArray(users) ? users : [];
+  const pendingUsers = safeUsers.filter((u) => u.status === "pending");
+  const activeUsers = safeUsers.filter((u) => u.status === "active");
+  const suspendedUsers = safeUsers.filter((u) => u.status === "suspended");
 
   if (!user || user.role !== "admin") {
     return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading admin panel...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -203,7 +226,7 @@ export default function AdminPanel() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-500 dark:text-gray-400">
-              Total Users: {users.length}
+              Total Users: {Array.isArray(users) ? users.length : 0}
             </div>
           </div>
         </div>
