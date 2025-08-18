@@ -16,11 +16,12 @@ export default function Community() {
   const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("picks");
 
-  // All hooks must be called before any conditional returns
+  // Fetch Cookie's Picks
   const { data: cookiesPicks = [] } = useQuery<CookiesPick[]>({
     queryKey: ["/api/community/cookies-picks"],
   });
 
+  // Fetch community stats
   const { data: communityStats } = useQuery<CommunityStats>({
     queryKey: ["/api/community/stats"],
   });

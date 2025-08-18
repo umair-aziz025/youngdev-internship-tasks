@@ -33,6 +33,13 @@ export default function Profile() {
   const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // All hooks must be called before any conditional returns
+  const { data: userStories = [] } = useQuery<Story[]>({
+    queryKey: ["/api/users", currentUser?.id || 0, "stories"],
+    queryFn: () => Promise.resolve([]), // Mock empty for now
+    enabled: !!currentUser?.id, // Only run query if user exists
+  });
+
   // Show loading while authentication is being determined
   if (isLoading) {
     return <PageLoader />;
@@ -93,12 +100,6 @@ export default function Profile() {
       </div>
     );
   }
-
-  // In a real app, these would be actual API calls
-  const { data: userStories = [] } = useQuery<Story[]>({
-    queryKey: ["/api/users", currentUser.id, "stories"],
-    queryFn: () => Promise.resolve([]), // Mock empty for now
-  });
 
   const getBadgeInfo = (badgeId: string) => {
     const badges = {

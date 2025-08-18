@@ -40,6 +40,42 @@ export default function Rooms() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
 
+  // All hooks must be called before conditional returns
+  const { data: publicRooms = [], isLoading: isRoomsLoading } = useQuery<Room[]>({
+    queryKey: ["/api/rooms/public"],
+  });
+
+  const form = useForm<CreateRoomForm>({
+    resolver: zodResolver(createRoomSchema),
+    defaultValues: {
+      name: "",
+      prompt: "",
+      isPrivate: false,
+      isThemed: false,
+      theme: "",
+    },
+  });
+
+  const createRoomMutation = useMutation({
+    mutationFn: api.createRoom,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms/public"] });
+      setShowCreateDialog(false);
+      form.reset();
+      toast({
+        title: "Room created!",
+        description: "Your storytelling room is ready for contributors.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to create room",
+        description: "Please try again or check your connection.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Show loading while authentication is being determined
   if (isLoading) {
     return <PageLoader />;
@@ -100,44 +136,6 @@ export default function Rooms() {
       </div>
     );
   }
-
-  // Fetch public rooms
-  const { data: publicRooms = [], isLoading: isRoomsLoading } = useQuery<Room[]>({
-    queryKey: ["/api/rooms/public"],
-  });
-
-  // Create room form
-  const form = useForm<CreateRoomForm>({
-    resolver: zodResolver(createRoomSchema),
-    defaultValues: {
-      name: "",
-      prompt: "",
-      isPrivate: false,
-      isThemed: false,
-      theme: "",
-    },
-  });
-
-  // Create room mutation
-  const createRoomMutation = useMutation({
-    mutationFn: api.createRoom,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/rooms/public"] });
-      setShowCreateDialog(false);
-      form.reset();
-      toast({
-        title: "Room created!",
-        description: "Your storytelling room is ready for contributors.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Failed to create room",
-        description: "Please try again or check your connection.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const onSubmit = (data: CreateRoomForm) => {
     createRoomMutation.mutate({
@@ -267,7 +265,7 @@ export default function Rooms() {
         </div>
 
         {/* Rooms Grid */}
-        {isLoading ? (
+        {isRoomsLoading ? (
           <div className="text-center py-8">
             <p className="text-gray-600 dark:text-gray-300">Loading rooms...</p>
           </div>
