@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated, isAdmin, isModerator } from "./replitAuth";
 import { insertUserSchema, insertRoomSchema, insertStorySchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -14,6 +15,9 @@ interface WebSocketClient extends WebSocket {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // Setup authentication
+  await setupAuth(app);
   
   // OpenAI client setup
   const apiKey = process.env.OPENAI_API_KEY?.trim();
@@ -100,6 +104,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Admin routes for user management
+  app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      const users = Array.from((storage as any).users.values());
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/role', isAdmin, async (req, res) => {
+    try {
+      const { role } = req.body;
+      if (!['user', 'moderator', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+      
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Update user role
+      const updatedUser = await storage.upsertUser({ 
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        username: user.username,
+        role 
+      });
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
+
   // Auth middleware (simplified for MVP)
   const requireAuth = async (req: any, res: any, next: any) => {
     const userId = req.headers['x-user-id'];
@@ -149,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const roomData = insertRoomSchema.parse({
         ...req.body,
-        creatorId: req.user.id,
+        creatorId: (req.user as any)?.claims?.sub || "",
       });
       
       const room = await storage.createRoom(roomData);
@@ -218,7 +272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/stories/:id/heart', requireAuth, async (req, res) => {
     try {
-      const isHearted = await storage.toggleHeart(req.params.id, req.user.id);
+      const userId = (req.user as any)?.claims?.sub || (req.user as any)?.id;
+      const isHearted = await storage.toggleHeart(req.params.id, userId);
       res.json({ hearted: isHearted });
     } catch (error) {
       res.status(500).json({ message: 'Server error', error });

@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Room, type InsertRoom, type Story, type InsertStory, type StoryChain, type CommunityStats, type Theme, type CookiesPick } from "@shared/schema";
+import { type User, type InsertUser, type UpsertUser, type Room, type InsertRoom, type Story, type InsertStory, type StoryChain, type CommunityStats, type Theme, type CookiesPick } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
@@ -6,8 +6,9 @@ import { users, rooms, stories, hearts, themes, cookiesPicks } from '@shared/sch
 import { eq, desc, sql, and } from 'drizzle-orm';
 
 export interface IStorage {
-  // Users
+  // Users (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -103,7 +104,6 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
-      avatar: insertUser.avatar || "",
       contributionsCount: 0,
       heartsReceived: 0,
       experiencePoints: 0,
@@ -111,9 +111,25 @@ export class MemStorage implements IStorage {
       badges: [],
       preferences: {},
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(userData.id!);
+    if (existingUser) {
+      const updatedUser = {
+        ...existingUser,
+        ...userData,
+        updatedAt: new Date(),
+      };
+      this.users.set(updatedUser.id, updatedUser);
+      return updatedUser;
+    } else {
+      return this.createUser(userData as InsertUser);
+    }
   }
 
   async updateUserStats(userId: string, contributions = 0, hearts = 0): Promise<void> {
@@ -360,6 +376,26 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const result = await this.db.insert(users).values(user).returning();
+    return result[0];
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const result = await this.db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          username: userData.username,
+          role: userData.role,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return result[0];
   }
 

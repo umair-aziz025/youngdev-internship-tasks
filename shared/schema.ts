@@ -3,18 +3,32 @@ import { pgTable, text, varchar, timestamp, integer, boolean, json } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  }
+);
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
-  avatar: text("avatar").default(""),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  username: text("username").unique(),
+  role: varchar("role").notNull().default("user"), // user, moderator, admin
   contributionsCount: integer("contributions_count").notNull().default(0),
   heartsReceived: integer("hearts_received").notNull().default(0),
   experiencePoints: integer("experience_points").notNull().default(0),
   level: integer("level").notNull().default(1),
   badges: text("badges").array().default([]),
   preferences: json("preferences").default({}),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const rooms = pgTable("rooms", {
@@ -68,9 +82,8 @@ export const cookiesPicks = pgTable("cookies_picks", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// Insert schemas
+// Insert schemas  
 export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
   contributionsCount: true,
   heartsReceived: true,
   experiencePoints: true,
@@ -78,6 +91,18 @@ export const insertUserSchema = createInsertSchema(users).omit({
   badges: true,
   preferences: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const upsertUserSchema = createInsertSchema(users).omit({
+  contributionsCount: true,
+  heartsReceived: true,
+  experiencePoints: true,
+  level: true,
+  badges: true,
+  preferences: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertRoomSchema = createInsertSchema(rooms).omit({
@@ -103,6 +128,7 @@ export const insertThemeSchema = createInsertSchema(themes).omit({
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 
 export type Room = typeof rooms.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;

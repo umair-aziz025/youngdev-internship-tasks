@@ -17,25 +17,23 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserProfile } from "@/components/user-profile";
 import type { StoryChain as StoryChainType, Theme, CommunityStats as CommunityStatsType } from "@shared/schema";
 
-// Mock user for MVP - in production this would come from auth
-const mockUser = {
-  id: "user-1",
-  username: "Sarah",
-  email: "sarah@example.com",
-  avatar: "",
-  contributionsCount: 12,
-  heartsReceived: 45,
-  experiencePoints: 340,
-  level: 4,
-  badges: ["first-story", "heart-giver", "storyteller"],
-  preferences: {},
-  createdAt: new Date(),
-};
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "wouter";
 
 export default function Home() {
   const { toast } = useToast();
-  const [currentUser] = useState(mockUser);
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<"global" | "themed">("global");
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Initialize WebSocket connection
   useWebSocket(currentUser.id, "global");
@@ -120,10 +118,21 @@ export default function Home() {
 
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center space-x-6">
-              <a href="#home" className="text-warm-teal font-medium border-b-2 border-warm-teal">Home</a>
-              <a href="#community" className="text-gray-600 hover:text-warm-teal transition-colors">Community</a>
-              <a href="#rooms" className="text-gray-600 hover:text-warm-teal transition-colors">Rooms</a>
-              <a href="#profile" className="text-gray-600 hover:text-warm-teal transition-colors">Profile</a>
+              <span className="text-warm-teal font-medium border-b-2 border-warm-teal">Home</span>
+              <Link href="/community">
+                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Community</span>
+              </Link>
+              <Link href="/rooms">
+                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Rooms</span>
+              </Link>
+              <Link href="/profile">
+                <span className="text-gray-600 hover:text-warm-teal transition-colors cursor-pointer">Profile</span>
+              </Link>
+              {currentUser.role === "admin" && (
+                <Link href="/admin">
+                  <span className="text-red-600 hover:text-red-700 transition-colors cursor-pointer">Admin</span>
+                </Link>
+              )}
             </nav>
 
             {/* User Actions */}
@@ -134,6 +143,14 @@ export default function Home() {
               </Button>
               <div className="hidden md:flex items-center space-x-3">
                 <UserProfile user={currentUser} compact />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.href = "/api/logout"}
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Logout
+                </Button>
               </div>
             </div>
           </div>
