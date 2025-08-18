@@ -42,23 +42,9 @@ export default function Home() {
   const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"global" | "themed">("global");
 
-  // Show loading while authentication is being determined
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
-  if (!isAuthenticated || !currentUser) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Initialize WebSocket connection
-  useWebSocket(currentUser.id, "global");
+  // ALL HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
+  // Initialize WebSocket connection (conditionally enabled)
+  useWebSocket(currentUser?.id || "", "global");
 
   // Fetch story chains
   const { data: storyChains = [], isLoading: chainsLoading } = useQuery<
@@ -66,17 +52,20 @@ export default function Home() {
   >({
     queryKey: ["/api/stories/chains"],
     refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: isAuthenticated && !!currentUser,
   });
 
   // Fetch daily theme
   const { data: dailyTheme } = useQuery<Theme>({
     queryKey: ["/api/themes/daily"],
+    enabled: isAuthenticated && !!currentUser,
   });
 
   // Fetch community stats
   const { data: communityStats } = useQuery<CommunityStatsType>({
     queryKey: ["/api/community/stats"],
     refetchInterval: 60000, // Refetch every minute
+    enabled: isAuthenticated && !!currentUser,
   });
 
   // Submit story mutation
@@ -116,13 +105,28 @@ export default function Home() {
         chainId: finalChainId,
         content,
         roomId: null, // Global room
-        authorId: currentUser.id,
-        authorName: currentUser.username || "Anonymous",
+        authorId: currentUser!.id,
+        authorName: currentUser!.username || "Anonymous",
       });
     } catch (error) {
       console.error("Failed to submit story:", error);
     }
   };
+
+  // Show loading while authentication is being determined
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-soft-cream dark:bg-gray-900 transition-colors duration-300">
@@ -336,7 +340,7 @@ export default function Home() {
                 <StoryChain
                   key={chain.chainId}
                   chain={chain}
-                  currentUser={currentUser}
+                  currentUser={currentUser!}
                   onContinue={handleStorySubmit}
                 />
               ))
