@@ -11,28 +11,12 @@ import StoryChain from "@/components/story-chain";
 import StoryInput from "@/components/story-input";
 import RoomManager from "@/components/room-manager";
 import CommunityStats from "@/components/community-stats";
-import {
-  Cookie,
-  Calendar,
-  Users,
-  Plus,
-  Menu,
-  User,
-  Bookmark,
-  Heart,
-  MessageCircle,
-  Share,
-  Book,
-} from "lucide-react";
+import { Cookie, Calendar, Users, Plus, Menu, User, Bookmark, Heart, MessageCircle, Share, Book } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserProfile } from "@/components/user-profile";
 import { PageLoader } from "@/components/loading-spinner";
-import type {
-  StoryChain as StoryChainType,
-  Theme,
-  CommunityStats as CommunityStatsType,
-} from "@shared/schema";
+import type { StoryChain as StoryChainType, Theme, CommunityStats as CommunityStatsType } from "@shared/schema";
 
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
@@ -42,30 +26,39 @@ export default function Home() {
   const { user: currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"global" | "themed">("global");
 
-  // ALL HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS
-  // Initialize WebSocket connection (conditionally enabled)
-  useWebSocket(currentUser?.id || "", "global");
+  // Show loading while authentication is being determined
+  if (isLoading) {
+    return <PageLoader />;
+  }
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Initialize WebSocket connection
+  useWebSocket(currentUser.id, "global");
 
   // Fetch story chains
-  const { data: storyChains = [], isLoading: chainsLoading } = useQuery<
-    StoryChainType[]
-  >({
+  const { data: storyChains = [], isLoading: chainsLoading } = useQuery<StoryChainType[]>({
     queryKey: ["/api/stories/chains"],
     refetchInterval: 30000, // Refetch every 30 seconds
-    enabled: isAuthenticated && !!currentUser,
   });
 
   // Fetch daily theme
   const { data: dailyTheme } = useQuery<Theme>({
     queryKey: ["/api/themes/daily"],
-    enabled: isAuthenticated && !!currentUser,
   });
 
   // Fetch community stats
   const { data: communityStats } = useQuery<CommunityStatsType>({
     queryKey: ["/api/community/stats"],
     refetchInterval: 60000, // Refetch every minute
-    enabled: isAuthenticated && !!currentUser,
   });
 
   // Submit story mutation
@@ -96,37 +89,20 @@ export default function Home() {
       const finalChainId = chainId || (await api.getNextChainId());
 
       // Determine sequence number
-      const existingChain = chainId
-        ? storyChains.find((c) => c.chainId === chainId)
-        : null;
+      const existingChain = chainId ? storyChains.find(c => c.chainId === chainId) : null;
       const sequence = existingChain ? existingChain.stories.length + 1 : 1;
 
       await submitStoryMutation.mutateAsync({
         chainId: finalChainId,
         content,
         roomId: null, // Global room
-        authorId: currentUser!.id,
-        authorName: currentUser!.username || "Anonymous",
+        authorId: currentUser.id,
+        authorName: currentUser.username || "Anonymous",
       });
     } catch (error) {
       console.error("Failed to submit story:", error);
     }
   };
-
-  // Show loading while authentication is being determined
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
-  if (!isAuthenticated || !currentUser) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-soft-cream dark:bg-gray-900 transition-colors duration-300">
@@ -173,44 +149,39 @@ export default function Home() {
               Someone somewhere is...
             </h2>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Join our storytelling community and continue the endless chain of
-              imagination. Every line builds upon another, creating beautiful
-              stories together.
+              Join our storytelling community and continue the endless chain of imagination. 
+              Every line builds upon another, creating beautiful stories together.
             </p>
 
             {/* Story Input */}
-            <StoryInput
+            <StoryInput 
               onSubmit={handleStorySubmit}
               isSubmitting={submitStoryMutation.isPending}
               user={currentUser!}
-              currentStory={
-                storyChains.length > 0
-                  ? storyChains[0].stories.map((s) => s.content).join(" ")
-                  : ""
-              }
+              currentStory={storyChains.length > 0 ? storyChains[0].stories.map(s => s.content).join(' ') : ''}
             />
 
             {/* Quick Actions */}
             <div className="flex flex-wrap justify-center gap-4 mt-6">
-              <Button
-                variant="outline"
+              <Button 
+                variant="outline" 
                 className="border-warm-teal text-warm-teal hover:bg-warm-teal hover:text-white btn-animate"
-                onClick={() => (window.location.href = "/rooms")}
+                onClick={() => window.location.href = '/rooms'}
               >
                 <Users className="w-4 h-4 mr-2 icon-animate" />
                 Create Private Room
               </Button>
-              <Button
+              <Button 
                 className="bg-warm-brown text-white hover:bg-warm-brown/90 btn-animate"
-                onClick={() => (window.location.href = "/rooms")}
+                onClick={() => window.location.href = '/rooms'}
               >
                 <Plus className="w-4 h-4 mr-2 icon-animate" />
                 Join Room
               </Button>
-              <Button
+              <Button 
                 variant="outline"
                 className="border-warm-brown text-warm-brown hover:bg-warm-brown hover:text-white btn-animate"
-                onClick={() => (window.location.href = "/community")}
+                onClick={() => window.location.href = '/community'}
               >
                 <Book className="w-4 h-4 mr-2 icon-animate" />
                 Browse Stories
@@ -226,20 +197,14 @@ export default function Home() {
           </h3>
           <div className="grid md:grid-cols-3 gap-6">
             {/* Create Story Rooms */}
-            <Card
-              className="card-hover cursor-pointer"
-              onClick={() => (window.location.href = "/rooms")}
-            >
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/rooms'}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-warm-teal rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
                   <Users className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                  Create Story Rooms
-                </h4>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Create Story Rooms</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                  Start private rooms with friends or join public storytelling
-                  spaces
+                  Start private rooms with friends or join public storytelling spaces
                 </p>
                 <Button className="w-full bg-warm-teal text-white hover:bg-warm-teal/90 btn-animate">
                   <Plus className="w-4 h-4 mr-2 icon-animate" />
@@ -249,20 +214,14 @@ export default function Home() {
             </Card>
 
             {/* Join Collaborative Storytelling */}
-            <Card
-              className="card-hover cursor-pointer"
-              onClick={() => (window.location.href = "/community")}
-            >
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/community'}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-warm-brown rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
                   <Book className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                  Collaborative Stories
-                </h4>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Collaborative Stories</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                  Continue where others left off and build amazing stories
-                  together
+                  Continue where others left off and build amazing stories together
                 </p>
                 <Button className="w-full bg-warm-brown text-white hover:bg-warm-brown/90 btn-animate">
                   <Heart className="w-4 h-4 mr-2 icon-animate" />
@@ -272,20 +231,14 @@ export default function Home() {
             </Card>
 
             {/* Manage Profile */}
-            <Card
-              className="card-hover cursor-pointer"
-              onClick={() => (window.location.href = "/profile")}
-            >
+            <Card className="card-hover cursor-pointer" onClick={() => window.location.href = '/profile'}>
               <CardContent className="p-6 text-center">
                 <div className="w-12 h-12 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center mx-auto mb-4 icon-animate">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                  Your Profile
-                </h4>
+                <h4 className="font-serif text-lg font-semibold text-gray-800 dark:text-white mb-2">Your Profile</h4>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                  Track contributions, earn badges, and see your storytelling
-                  journey
+                  Track contributions, earn badges, and see your storytelling journey
                 </p>
                 <Button className="w-full bg-gradient-to-r from-warm-teal to-warm-brown text-white btn-animate">
                   <Bookmark className="w-4 h-4 mr-2 icon-animate" />
@@ -299,29 +252,19 @@ export default function Home() {
         {/* Active Story Chains */}
         <section className="mb-12">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-serif text-2xl font-semibold text-gray-800">
-              Active Story Chains
-            </h3>
+            <h3 className="font-serif text-2xl font-semibold text-gray-800">Active Story Chains</h3>
             <div className="flex space-x-2">
               <Button
                 variant={activeTab === "global" ? "default" : "ghost"}
                 onClick={() => setActiveTab("global")}
-                className={
-                  activeTab === "global"
-                    ? "bg-warm-teal text-white"
-                    : "text-gray-600"
-                }
+                className={activeTab === "global" ? "bg-warm-teal text-white" : "text-gray-600"}
               >
                 Global Room
               </Button>
               <Button
                 variant={activeTab === "themed" ? "default" : "ghost"}
                 onClick={() => setActiveTab("themed")}
-                className={
-                  activeTab === "themed"
-                    ? "bg-warm-teal text-white"
-                    : "text-gray-600"
-                }
+                className={activeTab === "themed" ? "bg-warm-teal text-white" : "text-gray-600"}
               >
                 Themed
               </Button>
@@ -337,10 +280,10 @@ export default function Home() {
               </div>
             ) : storyChains.length > 0 ? (
               storyChains.map((chain) => (
-                <StoryChain
-                  key={chain.chainId}
-                  chain={chain}
-                  currentUser={currentUser!}
+                <StoryChain 
+                  key={chain.chainId} 
+                  chain={chain} 
+                  currentUser={currentUser}
                   onContinue={handleStorySubmit}
                 />
               ))
@@ -348,15 +291,9 @@ export default function Home() {
               <Card>
                 <CardContent className="text-center py-12">
                   <Cookie className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">
-                    No story chains yet. Be the first to start one!
-                  </p>
-                  <Button
-                    onClick={() =>
-                      handleStorySubmit(
-                        "Someone somewhere is beginning a new adventure...",
-                      )
-                    }
+                  <p className="text-gray-500 mb-4">No story chains yet. Be the first to start one!</p>
+                  <Button 
+                    onClick={() => handleStorySubmit("Someone somewhere is beginning a new adventure...")}
                     className="bg-warm-teal text-white hover:bg-warm-teal/90"
                   >
                     Start First Story
@@ -369,10 +306,7 @@ export default function Home() {
           {/* Load More */}
           {storyChains.length > 0 && (
             <div className="text-center mt-6">
-              <Button
-                variant="ghost"
-                className="text-warm-teal hover:text-warm-brown"
-              >
+              <Button variant="ghost" className="text-warm-teal hover:text-warm-brown">
                 Load more stories
               </Button>
             </div>
@@ -389,36 +323,25 @@ export default function Home() {
                   <Cookie className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-serif font-semibold text-lg text-gray-800">
-                    Cookie's Picks
-                  </h4>
+                  <h4 className="font-serif font-semibold text-lg text-gray-800">Cookie's Picks</h4>
                   <p className="text-sm text-gray-600">This week's favorites</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="bg-white/80 rounded-lg p-3">
                   <p className="text-sm text-gray-800 mb-2">
-                    "Someone somewhere is reading this and smiling, not knowing
-                    they're exactly where they need to be."
+                    "Someone somewhere is reading this and smiling, not knowing they're exactly where they need to be."
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">
-                      by Mahnoor_philosopher
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className="bg-orange-100 text-orange-600"
-                    >
+                    <span className="text-xs text-gray-500">by Mahnoor_philosopher</span>
+                    <Badge variant="secondary" className="bg-orange-100 text-orange-600">
                       <Cookie className="w-3 h-3 mr-1" />
                       Featured
                     </Badge>
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                className="w-full mt-4 text-orange-600 hover:text-orange-700"
-              >
+              <Button variant="ghost" className="w-full mt-4 text-orange-600 hover:text-orange-700">
                 View all picks
               </Button>
             </CardContent>
@@ -432,9 +355,7 @@ export default function Home() {
                   <Calendar className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-serif font-semibold text-lg text-gray-800">
-                    Today's Theme
-                  </h4>
+                  <h4 className="font-serif font-semibold text-lg text-gray-800">Today's Theme</h4>
                   <p className="text-sm text-gray-600">Nemrah Ahmed Inspired</p>
                 </div>
               </div>
@@ -443,7 +364,9 @@ export default function Home() {
                   <p className="text-sm text-gray-800 font-medium mb-2">
                     "{dailyTheme?.title}"
                   </p>
-                  <p className="text-xs text-gray-600">{dailyTheme?.prompt}</p>
+                  <p className="text-xs text-gray-600">
+                    {dailyTheme?.prompt}
+                  </p>
                 </div>
               )}
               <Button className="w-full bg-teal-100 text-teal-700 hover:bg-teal-200">
@@ -470,21 +393,13 @@ export default function Home() {
                 <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white">
                   <Cookie className="w-5 h-5" />
                 </div>
-                <h3 className="font-serif font-semibold text-xl text-gray-800">
-                  Cookie's Someone Somewhere
-                </h3>
+                <h3 className="font-serif font-semibold text-xl text-gray-800">Cookie's Someone Somewhere</h3>
               </div>
               <Card className="bg-story-gradient">
                 <CardContent className="p-6">
-                  <h4 className="font-medium text-gray-800 mb-3">
-                    Special Thanks
-                  </h4>
+                  <h4 className="font-medium text-gray-800 mb-3">Special Thanks</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    This app is inspired by the creativity of{" "}
-                    <strong>Nemrah Ahmed</strong>, who gave us endless stories
-                    and ideas to imagine beyond boundaries. Thank you for
-                    inspiring readers and dreamers everywhere. This community is
-                    built out of love, fun, and cookies 🍪.
+                    This app is inspired by the creativity of <strong>Nemrah Ahmed</strong>, who gave us endless stories and ideas to imagine beyond boundaries. Thank you for inspiring readers and dreamers everywhere. This community is built out of love, fun, and cookies 🍪.
                   </p>
                 </CardContent>
               </Card>
@@ -494,38 +409,10 @@ export default function Home() {
             <div>
               <h4 className="font-medium text-gray-800 mb-4">Community</h4>
               <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    How to Play
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Community Guidelines
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Cookie's Picks Archive
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Featured Stories
-                  </a>
-                </li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">How to Play</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Community Guidelines</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Cookie's Picks Archive</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Featured Stories</a></li>
               </ul>
             </div>
 
@@ -533,38 +420,10 @@ export default function Home() {
             <div>
               <h4 className="font-medium text-gray-800 mb-4">Support</h4>
               <ul className="space-y-2 text-sm">
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Report Content
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-warm-teal transition-colors"
-                  >
-                    Privacy Policy
-                  </a>
-                </li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Help Center</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Report Content</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Contact Us</a></li>
+                <li><a href="#" className="text-gray-600 hover:text-warm-teal transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
@@ -573,15 +432,10 @@ export default function Home() {
 
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500">
-              © 2024 Cookie's Someone Somewhere. Made with ❤️ for storytellers
-              everywhere.
+              © 2024 Cookie's Someone Somewhere. Made with ❤️ for storytellers everywhere.
             </p>
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-gray-400 hover:text-warm-teal"
-              >
+              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-warm-teal">
                 <Share className="w-4 h-4" />
               </Button>
             </div>
@@ -590,13 +444,9 @@ export default function Home() {
       </footer>
 
       {/* Floating Action Button */}
-      <Button
+      <Button 
         className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-warm-teal text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all"
-        onClick={() =>
-          handleStorySubmit(
-            "Someone somewhere is about to share something beautiful...",
-          )
-        }
+        onClick={() => handleStorySubmit("Someone somewhere is about to share something beautiful...")}
       >
         <Plus className="w-6 h-6" />
       </Button>

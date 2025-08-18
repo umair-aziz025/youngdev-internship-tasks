@@ -1,36 +1,56 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Shield, Users, UserCheck, UserX, Crown, User, Coffee, Home, Cookie } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useLocation } from 'wouter';
-import { UserProfile } from '@/components/user-profile';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { PageLoader } from '@/components/loading-spinner';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Shield,
+  Users,
+  UserCheck,
+  UserX,
+  Crown,
+  User,
+  Coffee,
+  Home,
+  Cookie,
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
+import { UserProfile } from "@/components/user-profile";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface User {
   id: number;
   username: string;
   email: string;
-  role: 'admin' | 'moderator' | 'community';
-  status: 'active' | 'pending' | 'suspended';
+  role: "admin" | "moderator" | "community";
+  status: "active" | "pending" | "suspended";
   createdAt: string;
 }
 
 export default function AdminPanel() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  // All hooks must be called before conditional returns
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      setLocation('/');
+    if (!user || user.role !== "admin") {
+      setLocation("/");
       return;
     }
     fetchUsers();
@@ -38,31 +58,34 @@ export default function AdminPanel() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch("/api/admin/users", {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
       }
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      console.error("Failed to fetch users:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUserAction = async (userId: number, action: 'approve' | 'reject' | 'suspend' | 'delete') => {
+  const handleUserAction = async (
+    userId: number,
+    action: "approve" | "reject" | "suspend" | "delete",
+  ) => {
     setActionLoading(userId);
     try {
       const response = await fetch(`/api/admin/users/${userId}/${action}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.ok) {
@@ -79,19 +102,19 @@ export default function AdminPanel() {
     setActionLoading(userId);
     try {
       const response = await fetch(`/api/admin/users/${userId}/role`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ role: newRole })
+        body: JSON.stringify({ role: newRole }),
       });
 
       if (response.ok) {
         await fetchUsers(); // Refresh the list
       }
     } catch (error) {
-      console.error('Failed to update role:', error);
+      console.error("Failed to update role:", error);
     } finally {
       setActionLoading(null);
     }
@@ -99,78 +122,36 @@ export default function AdminPanel() {
 
   const getStatusBadge = (status: string) => {
     const variants = {
-      active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100',
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
-      suspended: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+      active:
+        "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
+      pending:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
+      suspended: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
     };
-    return <Badge className={variants[status as keyof typeof variants]}>{status}</Badge>;
+    return (
+      <Badge className={variants[status as keyof typeof variants]}>
+        {status}
+      </Badge>
+    );
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'admin': return <Crown className="h-4 w-4 text-yellow-500" />;
-      case 'moderator': return <Shield className="h-4 w-4 text-blue-500" />;
-      default: return <User className="h-4 w-4 text-gray-500" />;
+      case "admin":
+        return <Crown className="h-4 w-4 text-yellow-500" />;
+      case "moderator":
+        return <Shield className="h-4 w-4 text-blue-500" />;
+      default:
+        return <User className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const pendingUsers = users.filter(u => u.status === 'pending');
-  const activeUsers = users.filter(u => u.status === 'active');
-  const suspendedUsers = users.filter(u => u.status === 'suspended');
+  const pendingUsers = users.filter((u) => u.status === "pending");
+  const activeUsers = users.filter((u) => u.status === "active");
+  const suspendedUsers = users.filter((u) => u.status === "suspended");
 
-  // Show loading while authentication is being determined
-  if (isLoading) {
-    return <PageLoader />;
-  }
-
-  // Redirect non-admin users
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-black">
-        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-light-beige/50 dark:border-gray-700/50 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl float-animation">
-                  <Cookie className="w-5 h-5 icon-animate" />
-                </div>
-                <div>
-                  <h1 className="font-serif font-semibold text-xl text-gray-800 dark:text-white">
-                    Cookie's
-                  </h1>
-                  <p className="font-serif text-sm text-gray-600 dark:text-gray-300 -mt-1">
-                    Someone Somewhere
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                    Inspired by Nemrah Ahmed
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <ThemeToggle />
-              </div>
-            </div>
-          </div>
-        </header>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="py-8 text-center">
-              <Shield className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                You don't have permission to access the admin panel.
-              </p>
-              <Button 
-                onClick={() => setLocation('/')}
-                className="bg-orange-600 text-white hover:bg-orange-700"
-              >
-                Go Home
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+  if (!user || user.role !== "admin") {
+    return null;
   }
 
   return (
@@ -213,8 +194,12 @@ export default function AdminPanel() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">Manage users and system settings</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Manage users and system settings
+            </p>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -225,7 +210,10 @@ export default function AdminPanel() {
 
         <Tabs defaultValue="pending" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pending" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="pending"
+              className="flex items-center space-x-2"
+            >
               <UserCheck className="h-4 w-4" />
               <span>Pending ({pendingUsers.length})</span>
             </TabsTrigger>
@@ -233,7 +221,10 @@ export default function AdminPanel() {
               <Users className="h-4 w-4" />
               <span>Active ({activeUsers.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="suspended" className="flex items-center space-x-2">
+            <TabsTrigger
+              value="suspended"
+              className="flex items-center space-x-2"
+            >
               <UserX className="h-4 w-4" />
               <span>Suspended ({suspendedUsers.length})</span>
             </TabsTrigger>
@@ -244,7 +235,9 @@ export default function AdminPanel() {
               <Card>
                 <CardContent className="py-8 text-center">
                   <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No pending users</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No pending users
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -255,7 +248,9 @@ export default function AdminPanel() {
                       <div className="flex items-center space-x-3">
                         {getRoleIcon(user.role)}
                         <div>
-                          <CardTitle className="text-lg">{user.username}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {user.username}
+                          </CardTitle>
                           <CardDescription>{user.email}</CardDescription>
                         </div>
                       </div>
@@ -268,12 +263,13 @@ export default function AdminPanel() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Registered: {new Date(user.createdAt).toLocaleDateString()}
+                        Registered:{" "}
+                        {new Date(user.createdAt).toLocaleDateString()}
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
                           size="sm"
-                          onClick={() => handleUserAction(user.id, 'approve')}
+                          onClick={() => handleUserAction(user.id, "approve")}
                           disabled={actionLoading === user.id}
                           className="bg-green-600 hover:bg-green-700"
                         >
@@ -282,7 +278,7 @@ export default function AdminPanel() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleUserAction(user.id, 'reject')}
+                          onClick={() => handleUserAction(user.id, "reject")}
                           disabled={actionLoading === user.id}
                         >
                           Reject
@@ -303,7 +299,9 @@ export default function AdminPanel() {
                     <div className="flex items-center space-x-3">
                       {getRoleIcon(user.role)}
                       <div>
-                        <CardTitle className="text-lg">{user.username}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {user.username}
+                        </CardTitle>
                         <CardDescription>{user.email}</CardDescription>
                       </div>
                     </div>
@@ -316,12 +314,15 @@ export default function AdminPanel() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Member since: {new Date(user.createdAt).toLocaleDateString()}
+                      Member since:{" "}
+                      {new Date(user.createdAt).toLocaleDateString()}
                     </div>
                     <div className="flex items-center space-x-2">
                       <Select
                         value={user.role}
-                        onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
+                        onValueChange={(newRole) =>
+                          handleRoleChange(user.id, newRole)
+                        }
                         disabled={actionLoading === user.id}
                       >
                         <SelectTrigger className="w-32">
@@ -336,7 +337,7 @@ export default function AdminPanel() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleUserAction(user.id, 'suspend')}
+                        onClick={() => handleUserAction(user.id, "suspend")}
                         disabled={actionLoading === user.id}
                       >
                         Suspend
@@ -344,7 +345,7 @@ export default function AdminPanel() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleUserAction(user.id, 'delete')}
+                        onClick={() => handleUserAction(user.id, "delete")}
                         disabled={actionLoading === user.id}
                       >
                         Delete
@@ -361,7 +362,9 @@ export default function AdminPanel() {
               <Card>
                 <CardContent className="py-8 text-center">
                   <UserX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">No suspended users</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No suspended users
+                  </p>
                 </CardContent>
               </Card>
             ) : (
@@ -372,7 +375,9 @@ export default function AdminPanel() {
                       <div className="flex items-center space-x-3">
                         {getRoleIcon(user.role)}
                         <div>
-                          <CardTitle className="text-lg">{user.username}</CardTitle>
+                          <CardTitle className="text-lg">
+                            {user.username}
+                          </CardTitle>
                           <CardDescription>{user.email}</CardDescription>
                         </div>
                       </div>
@@ -390,7 +395,7 @@ export default function AdminPanel() {
                       <div className="flex items-center space-x-2">
                         <Button
                           size="sm"
-                          onClick={() => handleUserAction(user.id, 'approve')}
+                          onClick={() => handleUserAction(user.id, "approve")}
                           disabled={actionLoading === user.id}
                           className="bg-green-600 hover:bg-green-700"
                         >
@@ -399,7 +404,7 @@ export default function AdminPanel() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleUserAction(user.id, 'delete')}
+                          onClick={() => handleUserAction(user.id, "delete")}
                           disabled={actionLoading === user.id}
                         >
                           Delete
