@@ -338,6 +338,35 @@ app.get('*', (req, res, next) => {
               </div>
             </div>
           </div>
+
+          <!-- Confirmation Dialog Modal -->
+          <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+            <div class="glass rounded-2xl p-6 m-4 max-w-md w-full">
+              <div class="text-center space-y-4">
+                <div class="flex justify-center">
+                  <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-400"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Confirm Action</h3>
+                <p id="confirm-message" class="text-gray-300">Are you sure you want to proceed?</p>
+                <div class="flex space-x-3 justify-center pt-4">
+                  <button
+                    id="confirm-cancel"
+                    class="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                    data-testid="button-confirm-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="confirm-yes"
+                    class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    data-testid="button-confirm-yes"
+                  >
+                    Yes, Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -355,11 +384,7 @@ app.get('*', (req, res, next) => {
               <p class="text-gray-300 text-sm leading-relaxed">
                 <strong>Intern:</strong> Umair Aziz<br />
                 <strong>Position:</strong> Cyber Security Intern<br />
-                <strong>Duration:</strong> 4 weeks | <strong>Start Date:</strong> 18-08-2025<br />
                 <em>"Empowering Tomorrow's Developers Today"</em>
-              </p>
-              <p class="text-cyan-400 text-sm mt-3 font-medium">
-                CEO YoungDev Interns
               </p>
             </div>
             
@@ -623,30 +648,70 @@ app.get('*', (req, res, next) => {
 
       // Clear all password history
       function clearHistory() {
-        if (confirm('Are you sure you want to clear all password history? This action cannot be undone.')) {
-          localStorage.removeItem('passwordHistory');
-          
-          const button = event.target.closest('button');
-          const originalText = button.innerHTML;
-          button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Cleared!</span>';
-          button.classList.remove('bg-red-600', 'hover:bg-red-700');
-          button.classList.add('bg-gray-600');
-          
-          setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('bg-gray-600');
-            button.classList.add('bg-red-600', 'hover:bg-red-700');
+        showConfirmDialog(
+          'Are you sure you want to clear all password history? This action cannot be undone.',
+          function() {
+            localStorage.removeItem('passwordHistory');
+            
+            const button = document.querySelector('[data-testid="button-clear-history"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Cleared!</span>';
+            button.classList.remove('bg-red-600', 'hover:bg-red-700');
+            button.classList.add('bg-gray-600');
+            
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('bg-gray-600');
+              button.classList.add('bg-red-600', 'hover:bg-red-700');
+              lucide.createIcons();
+            }, 2000);
+            
             lucide.createIcons();
-          }, 2000);
-          
-          lucide.createIcons();
-        }
+          }
+        );
+      }
+
+      // Show confirmation dialog
+      function showConfirmDialog(message, onConfirm) {
+        document.getElementById('confirm-message').textContent = message;
+        document.getElementById('confirm-modal').classList.remove('hidden');
+        
+        const confirmButton = document.getElementById('confirm-yes');
+        const cancelButton = document.getElementById('confirm-cancel');
+        
+        // Remove any existing listeners
+        confirmButton.onclick = null;
+        cancelButton.onclick = null;
+        
+        // Add new listeners
+        confirmButton.onclick = function() {
+          hideConfirmDialog();
+          onConfirm();
+        };
+        
+        cancelButton.onclick = function() {
+          hideConfirmDialog();
+        };
+        
+        lucide.createIcons();
+      }
+
+      // Hide confirmation dialog
+      function hideConfirmDialog() {
+        document.getElementById('confirm-modal').classList.add('hidden');
       }
 
       // Close modal when clicking outside
       document.getElementById('history-modal').addEventListener('click', function(e) {
         if (e.target === this) {
           hideHistory();
+        }
+      });
+
+      // Close confirmation modal when clicking outside
+      document.getElementById('confirm-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideConfirmDialog();
         }
       });
     </script>
