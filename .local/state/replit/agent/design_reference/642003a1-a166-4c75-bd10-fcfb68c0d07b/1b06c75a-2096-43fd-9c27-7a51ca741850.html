@@ -1,0 +1,600 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie's Someone Somewhere - Community Storytelling Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    'warm-teal': '#4A9B8E',
+                    'light-beige': '#F5F1EB',
+                    'warm-brown': '#8B6F47',
+                    'soft-cream': '#FEFCF8',
+                    'story-gradient-start': '#E8F4F8',
+                    'story-gradient-end': '#F0E6D6'
+                },
+                fontFamily: {
+                    'inter': ['Inter', 'sans-serif'],
+                    'playfair': ['Playfair Display', 'serif']
+                }
+            }
+        }
+    };
+    </script>
+</head>
+
+<!-- @COMPONENT: MainApp [root application container] -->
+<body class="bg-soft-cream font-inter text-gray-800 min-h-screen">
+
+    <!-- @COMPONENT: Header [main navigation and branding] -->
+    <header class="bg-white/80 backdrop-blur-sm border-b border-light-beige/50 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo and Branding -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white text-xl">
+                        <i class="fas fa-cookie-bite"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-playfair font-semibold text-xl text-gray-800">Cookie's Someone Somewhere</h1>
+                        <p class="text-xs text-gray-500">Inspired by Nemrah Ahmed</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Menu -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="#home" class="text-warm-teal font-medium border-b-2 border-warm-teal">Home</a>
+                    <a href="#community" class="text-gray-600 hover:text-warm-teal transition-colors">Community</a>
+                    <a href="#rooms" class="text-gray-600 hover:text-warm-teal transition-colors">Rooms</a>
+                    <a href="#profile" class="text-gray-600 hover:text-warm-teal transition-colors">Profile</a>
+                </nav>
+
+                <!-- User Actions -->
+                <div class="flex items-center space-x-3">
+                    <button class="md:hidden text-gray-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="hidden md:flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-warm-teal rounded-full flex items-center justify-center text-white text-sm">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="text-sm text-gray-600" data-bind="user.name">Sarah</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <!-- @COMPONENT: MainContent [primary content area] -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Hero Section -->
+        <!-- @COMPONENT: HeroSection [main game introduction and quick start] -->
+        <section class="bg-gradient-to-br from-story-gradient-start to-story-gradient-end rounded-3xl p-8 mb-8 text-center">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+                    Someone somewhere is...
+                </h2>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    Join our storytelling community and continue the endless chain of imagination. 
+                    Every line builds upon another, creating beautiful stories together.
+                </p>
+                
+                <!-- Story Input -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-warm-teal rounded-full flex items-center justify-center text-white flex-shrink-0">
+                            <i class="fas fa-cookie-bite"></i>
+                        </div>
+                        <div class="flex-1">
+                            <textarea 
+                                placeholder="Continue the story... 'Someone somewhere is dancing in the rain because...'"
+                                class="w-full p-4 border border-light-beige rounded-xl resize-none focus:ring-2 focus:ring-warm-teal focus:border-transparent"
+                                rows="3"
+                                data-bind="userInput"
+                                data-mock="true"
+                            ></textarea>
+                            <div class="flex justify-between items-center mt-4">
+                                <span class="text-sm text-gray-500">280 characters left</span>
+                                <button 
+                                    class="bg-warm-teal text-white px-6 py-2 rounded-xl hover:bg-opacity-90 transition-all font-medium"
+                                    data-event="click:submitStoryLine"
+                                >
+                                    Add to Story <i class="fas fa-plus ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button class="bg-white text-warm-teal px-6 py-3 rounded-full hover:shadow-lg transition-all border border-warm-teal">
+                        <i class="fas fa-users mr-2"></i>Create Private Room
+                    </button>
+                    <button class="bg-warm-brown text-white px-6 py-3 rounded-full hover:bg-opacity-90 transition-all">
+                        <i class="fas fa-door-open mr-2"></i>Join Room
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: HeroSection -->
+
+        <!-- Active Story Chains -->
+        <!-- @COMPONENT: StoryChains [display of ongoing story threads] -->
+        <section class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-playfair text-2xl font-semibold text-gray-800">Active Story Chains</h3>
+                <div class="flex space-x-2">
+                    <button class="text-warm-teal bg-warm-teal/10 px-4 py-2 rounded-full text-sm font-medium">
+                        Global Room
+                    </button>
+                    <button class="text-gray-600 hover:text-warm-teal px-4 py-2 rounded-full text-sm">
+                        Themed
+                    </button>
+                </div>
+            </div>
+
+            <!-- Story Chain Display -->
+            <div class="space-y-4">
+                <!-- @MAP: storyChains.map(chain => ( -->
+                
+                <!-- Individual Story Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-light-beige/30 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <span class="bg-warm-teal/20 text-warm-teal px-3 py-1 rounded-full text-sm font-medium">
+                                    Chain #1247
+                                </span>
+                                <span class="text-gray-500 text-sm">Started 2 hours ago</span>
+                            </div>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Story Chain Lines -->
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3 p-3 bg-story-gradient-start/30 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs">
+                                    A
+                                </div>
+                                <div>
+                                    <p class="text-gray-800" data-bind="story.lines[0]" data-mock="true">
+                                        Someone somewhere is writing a letter they'll never send, pouring their heart onto paper that will never reach its destination...
+                                    </p>
+                                    <span class="text-xs text-gray-500" data-bind="story.authors[0]" data-mock="true">by Amina_writes</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-teal-400 rounded-full flex items-center justify-center text-white text-xs">
+                                    K
+                                </div>
+                                <div>
+                                    <p class="text-gray-800" data-bind="story.lines[1]" data-mock="true">
+                                        ...because they know the words would change everything, and sometimes keeping love as a secret is safer than risking the beautiful 'what if'...
+                                    </p>
+                                    <span class="text-xs text-gray-500" data-bind="story.authors[1]" data-mock="true">by Khansa_dreamer</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full flex items-center justify-center text-white text-xs">
+                                    Z
+                                </div>
+                                <div>
+                                    <p class="text-gray-800" data-bind="story.lines[2]" data-mock="true">
+                                        ...but little do they know, someone somewhere is also writing a letter to them, wondering if their feelings could ever be reciprocated.
+                                    </p>
+                                    <span class="text-xs text-gray-500" data-bind="story.authors[2]" data-mock="true">by Zara_storyteller</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors">
+                                    <i class="far fa-heart"></i>
+                                    <span class="text-sm" data-bind="story.likes" data-mock="true">24</span>
+                                </button>
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                    <i class="far fa-comment"></i>
+                                    <span class="text-sm" data-bind="story.comments" data-mock="true">8</span>
+                                </button>
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+                                    <i class="fas fa-share"></i>
+                                    <span class="text-sm">Share</span>
+                                </button>
+                            </div>
+                            <span class="text-sm text-gray-500" data-bind="story.contributions" data-mock="true">15 contributors</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Another Story Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-light-beige/30 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <span class="bg-warm-brown/20 text-warm-brown px-3 py-1 rounded-full text-sm font-medium">
+                                    Chain #1246
+                                </span>
+                                <span class="text-gray-500 text-sm">Started 4 hours ago</span>
+                                <span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs">
+                                    Featured Theme: Nemrah Ahmed Vibes
+                                </span>
+                            </div>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Story Chain Lines -->
+                        <div class="space-y-3">
+                            <div class="flex items-start space-x-3 p-3 bg-warm-brown/10 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full flex items-center justify-center text-white text-xs">
+                                    F
+                                </div>
+                                <div>
+                                    <p class="text-gray-800" data-bind="story.lines[0]" data-mock="true">
+                                        Someone somewhere just discovered a hidden room in their ancestral home, filled with letters that reveal family secrets spanning generations...
+                                    </p>
+                                    <span class="text-xs text-gray-500" data-bind="story.authors[0]" data-mock="true">by Fatima_mysteries</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-br from-rose-400 to-pink-400 rounded-full flex items-center justify-center text-white text-xs">
+                                    N
+                                </div>
+                                <div>
+                                    <p class="text-gray-800" data-bind="story.lines[1]" data-mock="true">
+                                        ...among the yellowed papers, they find mention of a love affair that was forbidden, a betrayal that split the family, and a treasure that was never found...
+                                    </p>
+                                    <span class="text-xs text-gray-500" data-bind="story.authors[1]" data-mock="true">by Noor_heritage</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <div class="flex items-center space-x-4">
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors">
+                                    <i class="far fa-heart"></i>
+                                    <span class="text-sm" data-bind="story.likes" data-mock="true">31</span>
+                                </button>
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                    <i class="far fa-comment"></i>
+                                    <span class="text-sm" data-bind="story.comments" data-mock="true">12</span>
+                                </button>
+                                <button class="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+                                    <i class="fas fa-share"></i>
+                                    <span class="text-sm">Share</span>
+                                </button>
+                            </div>
+                            <span class="text-sm text-gray-500" data-bind="story.contributions" data-mock="true">9 contributors</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- @END_MAP )) -->
+            </div>
+
+            <!-- Load More -->
+            <div class="text-center mt-6">
+                <button class="text-warm-teal hover:text-warm-brown transition-colors font-medium">
+                    Load more stories <i class="fas fa-chevron-down ml-2"></i>
+                </button>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: StoryChains -->
+
+        <!-- Community Features Grid -->
+        <!-- @COMPONENT: CommunityGrid [highlights and featured content] -->
+        <section class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            
+            <!-- Cookie's Picks -->
+            <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-orange-100">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-cookie-bite text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-playfair font-semibold text-lg text-gray-800">Cookie's Picks</h4>
+                        <p class="text-sm text-gray-600">This week's favorites</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-white/80 rounded-lg p-3">
+                        <p class="text-sm text-gray-800 mb-2" data-mock="true">
+                            "Someone somewhere is reading this and smiling, not knowing they're exactly where they need to be."
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-gray-500" data-mock="true">by Mahnoor_philosopher</span>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-cookie-bite text-orange-400 text-xs"></i>
+                                <span class="text-xs text-orange-600">Featured</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="w-full mt-4 text-orange-600 hover:text-orange-700 font-medium text-sm">
+                    View all picks <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+
+            <!-- Daily Theme -->
+            <div class="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-6 border border-teal-100">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-blue-400 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-calendar-day text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-playfair font-semibold text-lg text-gray-800">Today's Theme</h4>
+                        <p class="text-sm text-gray-600">Nemrah Ahmed Inspired</p>
+                    </div>
+                </div>
+                <div class="bg-white/80 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-gray-800 font-medium mb-2">
+                        "Jannat Kay Pattay Vibes"
+                    </p>
+                    <p class="text-xs text-gray-600" data-mock="true">
+                        Someone somewhere is discovering that home isn't a place, but the people who make your heart feel at peace...
+                    </p>
+                </div>
+                <button class="w-full bg-teal-100 text-teal-700 py-2 rounded-lg hover:bg-teal-200 transition-colors font-medium text-sm">
+                    Join themed stories
+                </button>
+            </div>
+
+            <!-- Community Stats -->
+            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white">
+                        <i class="fas fa-users text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-playfair font-semibold text-lg text-gray-800">Community</h4>
+                        <p class="text-sm text-gray-600">Active storytellers</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-800" data-bind="stats.totalStories" data-mock="true">1,247</p>
+                        <p class="text-xs text-gray-600">Stories</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-800" data-bind="stats.activeUsers" data-mock="true">892</p>
+                        <p class="text-xs text-gray-600">Writers</p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-purple-100">
+                    <p class="text-xs text-center text-gray-600">
+                        <i class="fas fa-heart text-red-400 mr-1"></i>
+                        <span data-bind="stats.totalLikes" data-mock="true">15,624</span> hearts given this week
+                    </p>
+                </div>
+            </div>
+
+        </section>
+        <!-- @END_COMPONENT: CommunityGrid -->
+
+        <!-- Room Management Section -->
+        <!-- @COMPONENT: RoomSection [private room creation and management] -->
+        <section class="bg-white rounded-2xl shadow-sm border border-light-beige/30 p-8">
+            <div class="text-center mb-8">
+                <h3 class="font-playfair text-2xl font-semibold text-gray-800 mb-2">Create Your Story Circle</h3>
+                <p class="text-gray-600">Start a private room with friends or join existing story circles</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Create Room -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-gray-800 flex items-center">
+                        <i class="fas fa-plus-circle text-warm-teal mr-2"></i>
+                        Create New Room
+                    </h4>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Room Name</label>
+                            <input 
+                                type="text" 
+                                placeholder="e.g., Midnight Storytellers" 
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-warm-teal focus:border-transparent"
+                                data-bind="roomName"
+                                data-mock="true"
+                            />
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Starting Prompt</label>
+                            <textarea 
+                                placeholder="Someone somewhere is..." 
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-warm-teal focus:border-transparent resize-none"
+                                rows="2"
+                                data-bind="roomPrompt"
+                                data-mock="true"
+                            ></textarea>
+                        </div>
+
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="text-warm-teal rounded focus:ring-warm-teal" data-mock="true" />
+                                <span class="ml-2 text-sm text-gray-600">Private (invite only)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="text-warm-teal rounded focus:ring-warm-teal" data-mock="true" />
+                                <span class="ml-2 text-sm text-gray-600">Themed</span>
+                            </label>
+                        </div>
+
+                        <button class="w-full bg-warm-teal text-white py-3 rounded-lg hover:bg-opacity-90 transition-colors font-medium">
+                            Create Room <i class="fas fa-door-open ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Join Room -->
+                <div class="space-y-4">
+                    <h4 class="font-medium text-gray-800 flex items-center">
+                        <i class="fas fa-door-open text-warm-brown mr-2"></i>
+                        Join Existing Room
+                    </h4>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Room Code</label>
+                            <input 
+                                type="text" 
+                                placeholder="Enter 6-digit code" 
+                                class="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-warm-brown focus:border-transparent uppercase tracking-widest"
+                                maxlength="6"
+                                data-bind="roomCode"
+                                data-mock="true"
+                            />
+                        </div>
+
+                        <button class="w-full bg-warm-brown text-white py-3 rounded-lg hover:bg-opacity-90 transition-colors font-medium">
+                            Join Room <i class="fas fa-sign-in-alt ml-2"></i>
+                        </button>
+                    </div>
+
+                    <!-- Active Rooms Preview -->
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <h5 class="text-sm font-medium text-gray-700 mb-3">Popular Public Rooms</h5>
+                        <div class="space-y-2">
+                            <!-- @MAP: popularRooms.map(room => ( -->
+                            <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800" data-bind="room.name" data-mock="true">Late Night Poets</p>
+                                        <p class="text-xs text-gray-500" data-bind="room.memberCount" data-mock="true">12 active writers</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                </div>
+                            </button>
+                            
+                            <button class="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800" data-bind="room.name" data-mock="true">Nemrah's Readers Circle</p>
+                                        <p class="text-xs text-gray-500" data-bind="room.memberCount" data-mock="true">28 active writers</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-gray-400 text-xs"></i>
+                                </div>
+                            </button>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- @END_COMPONENT: RoomSection -->
+
+    </main>
+    <!-- @END_COMPONENT: MainContent -->
+
+    <!-- @COMPONENT: Footer [acknowledgment and additional links] -->
+    <footer class="bg-white border-t border-light-beige/50 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid md:grid-cols-4 gap-8">
+                
+                <!-- About Section -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-warm-teal to-warm-brown rounded-full flex items-center justify-center text-white">
+                            <i class="fas fa-cookie-bite"></i>
+                        </div>
+                        <h3 class="font-playfair font-semibold text-xl text-gray-800">Cookie's Someone Somewhere</h3>
+                    </div>
+                    <div class="bg-story-gradient-start/30 rounded-2xl p-6">
+                        <h4 class="font-medium text-gray-800 mb-3">Special Thanks</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed">
+                            This app is inspired by the creativity of <strong>Nemrah Ahmed</strong>, who gave us endless stories and ideas to imagine beyond boundaries. Thank you for inspiring readers and dreamers everywhere. This community is built out of love, fun, and cookies 🍪.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-4">Community</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">How to Play</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Community Guidelines</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Cookie's Picks Archive</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Featured Stories</a></li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Report Content</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-warm-teal transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="border-t border-gray-200 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-sm text-gray-500">
+                    © 2024 Cookie's Someone Somewhere. Made with ❤️ for storytellers everywhere.
+                </p>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <button class="text-gray-400 hover:text-warm-teal transition-colors">
+                        <i class="fab fa-twitter"></i>
+                    </button>
+                    <button class="text-gray-400 hover:text-warm-teal transition-colors">
+                        <i class="fab fa-instagram"></i>
+                    </button>
+                    <button class="text-gray-400 hover:text-warm-teal transition-colors">
+                        <i class="fab fa-facebook"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <!-- @COMPONENT: FloatingActionButton [quick access to main actions] -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button class="w-14 h-14 bg-warm-teal text-white rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center">
+            <i class="fas fa-plus text-xl"></i>
+        </button>
+    </div>
+    <!-- @END_COMPONENT: FloatingActionButton -->
+
+    <script>
+    // TODO: Implement business logic, API calls, and state management for:
+    // - Story chain submission and real-time updates
+    // - Room creation and management
+    // - User authentication and profiles
+    // - Community features (likes, comments, sharing)
+    // - Theme management and daily prompts
+    // - Responsive mobile navigation
+
+    (function() {
+        // Basic UI interactions for demonstration
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle functionality would be implemented here
+            // Story submission handling would be implemented here
+            // Real-time story updates would be implemented here
+            // Room code validation would be implemented here
+        });
+    })();
+    </script>
+
+</body>
+<!-- @END_COMPONENT: MainApp -->
+</html>
