@@ -17,6 +17,12 @@ app.post('/api/check-password', (req, res) => {
   const { password } = req.body;
   
   const analysis = analyzePassword(password);
+  
+  // Return empty response for empty password
+  if (!analysis) {
+    return res.json({ empty: true });
+  }
+  
   res.json(analysis);
 });
 
@@ -27,6 +33,11 @@ app.get('/api/password-history', (req, res) => {
 });
 
 function analyzePassword(password: string) {
+  // Return null for empty password
+  if (!password || password.length === 0) {
+    return null;
+  }
+
   const result = {
     score: 0,
     strength: 'Very Weak',
@@ -200,15 +211,56 @@ app.get('*', (req, res, next) => {
                     placeholder="Type your password here..."
                     class="w-full px-6 py-4 bg-black bg-opacity-20 border border-white border-opacity-30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all"
                     oninput="analyzePassword(this.value)"
+                    data-testid="input-password"
                   />
                   <button
                     type="button"
                     onclick="togglePassword()"
                     class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    data-testid="button-toggle-password"
                   >
                     <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
                   </button>
                 </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div id="action-buttons" class="hidden flex flex-wrap gap-3 justify-center">
+                <button
+                  onclick="saveResult()"
+                  class="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  data-testid="button-save-result"
+                >
+                  <i data-lucide="save" class="w-4 h-4"></i>
+                  <span>Save Result</span>
+                </button>
+                
+                <button
+                  onclick="exportToJSON()"
+                  class="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  data-testid="button-export-json"
+                >
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                  <span>Export JSON</span>
+                </button>
+                
+                <button
+                  onclick="showHistory()"
+                  class="flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                  data-testid="button-show-history"
+                >
+                  <i data-lucide="history" class="w-4 h-4"></i>
+                  <span>View History</span>
+                </button>
+                
+                <button
+                  onclick="clearHistory()"
+                  class="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                  data-testid="button-clear-history"
+                >
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  <span>Clear History</span>
+                </button>
               </div>
             </div>
           </div>
@@ -263,6 +315,29 @@ app.get('*', (req, res, next) => {
               <!-- Recommendations will be populated by JavaScript -->
             </ul>
           </div>
+
+          <!-- Password History Modal -->
+          <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm hidden flex items-center justify-center z-50">
+            <div class="glass rounded-2xl p-6 m-4 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-white flex items-center space-x-2">
+                  <i data-lucide="history" class="w-6 h-6 text-cyan-400"></i>
+                  <span>Password History</span>
+                </h2>
+                <button
+                  onclick="hideHistory()"
+                  class="text-gray-400 hover:text-white transition-colors"
+                  data-testid="button-close-history"
+                >
+                  <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+              </div>
+              
+              <div id="history-content" class="space-y-4">
+                <p class="text-gray-400 text-center py-8">No password analysis history found.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -301,6 +376,7 @@ app.get('*', (req, res, next) => {
       lucide.createIcons();
 
       let showPassword = false;
+      let currentAnalysis = null;
 
       function togglePassword() {
         const input = document.getElementById('password');
@@ -313,9 +389,12 @@ app.get('*', (req, res, next) => {
       }
 
       async function analyzePassword(password) {
-        if (password.length === 0) {
+        // Handle empty password
+        if (!password || password.trim().length === 0) {
           document.getElementById('results').classList.add('hidden');
           document.getElementById('recommendations').classList.add('hidden');
+          document.getElementById('action-buttons').classList.add('hidden');
+          currentAnalysis = null;
           return;
         }
 
@@ -327,6 +406,23 @@ app.get('*', (req, res, next) => {
           });
           
           const analysis = await response.json();
+          
+          // Check if empty response
+          if (analysis.empty) {
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('recommendations').classList.add('hidden');
+            document.getElementById('action-buttons').classList.add('hidden');
+            currentAnalysis = null;
+            return;
+          }
+          
+          currentAnalysis = {
+            ...analysis,
+            password: password.replace(/./g, '*'), // Masked password for storage
+            timestamp: new Date().toISOString(),
+            id: Date.now()
+          };
+          
           displayResults(analysis);
         } catch (error) {
           console.error('Error analyzing password:', error);
@@ -335,6 +431,7 @@ app.get('*', (req, res, next) => {
 
       function displayResults(analysis) {
         document.getElementById('results').classList.remove('hidden');
+        document.getElementById('action-buttons').classList.remove('hidden');
         
         // Update score and progress
         document.getElementById('score').textContent = analysis.score + '/100';
@@ -361,6 +458,9 @@ app.get('*', (req, res, next) => {
         
         // Update recommendations
         updateRecommendations(analysis.feedback);
+        
+        // Recreate icons after DOM update
+        lucide.createIcons();
       }
 
       function updateRequirements(details) {
@@ -383,8 +483,6 @@ app.get('*', (req, res, next) => {
             '<span class="text-sm ' + (req.met ? 'text-green-400' : 'text-red-400') + '">' + req.detail + '</span>' +
           '</div>'
         ).join('');
-        
-        lucide.createIcons();
       }
 
       function updateRecommendations(feedback) {
@@ -402,6 +500,155 @@ app.get('*', (req, res, next) => {
           '</li>'
         ).join('');
       }
+
+      // Save result to local storage
+      function saveResult() {
+        if (!currentAnalysis) {
+          alert('No analysis to save!');
+          return;
+        }
+
+        let history = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+        history.unshift(currentAnalysis);
+        
+        // Keep only last 50 results
+        if (history.length > 50) {
+          history = history.slice(0, 50);
+        }
+        
+        localStorage.setItem('passwordHistory', JSON.stringify(history));
+        
+        // Show success message
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Saved!</span>';
+        button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        button.classList.add('bg-green-600');
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.classList.remove('bg-green-600');
+          button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+          lucide.createIcons();
+        }, 2000);
+        
+        lucide.createIcons();
+      }
+
+      // Export current result to JSON
+      function exportToJSON() {
+        if (!currentAnalysis) {
+          alert('No analysis to export!');
+          return;
+        }
+
+        const dataStr = JSON.stringify(currentAnalysis, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'password-analysis-' + new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-') + '.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Show success message
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Exported!</span>';
+        button.classList.remove('bg-green-600', 'hover:bg-green-700');
+        button.classList.add('bg-blue-600');
+        
+        setTimeout(() => {
+          button.innerHTML = originalText;
+          button.classList.remove('bg-blue-600');
+          button.classList.add('bg-green-600', 'hover:bg-green-700');
+          lucide.createIcons();
+        }, 2000);
+        
+        lucide.createIcons();
+      }
+
+      // Show password history modal
+      function showHistory() {
+        const history = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+        const modal = document.getElementById('history-modal');
+        const content = document.getElementById('history-content');
+
+        if (history.length === 0) {
+          content.innerHTML = '<p class="text-gray-400 text-center py-8">No password analysis history found.</p>';
+        } else {
+          content.innerHTML = history.map((item, index) => {
+            const date = new Date(item.timestamp).toLocaleString();
+            const strengthClass = 'strength-' + item.strength.toLowerCase().replace(' ', '-');
+            
+            return '<div class="glass rounded-lg p-4 mb-4">' +
+              '<div class="flex justify-between items-start mb-3">' +
+                '<div class="flex items-center space-x-3">' +
+                  '<span class="text-white font-medium">#' + (index + 1) + '</span>' +
+                  '<span class="text-gray-400 text-sm">' + date + '</span>' +
+                '</div>' +
+                '<button onclick="deleteHistoryItem(' + item.id + ')" class="text-red-400 hover:text-red-300">' +
+                  '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+                '</button>' +
+              '</div>' +
+              '<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">' +
+                '<div><span class="text-gray-400">Password:</span><br><span class="text-white font-mono">' + item.password + '</span></div>' +
+                '<div><span class="text-gray-400">Score:</span><br><span class="text-white font-bold">' + item.score + '/100</span></div>' +
+                '<div><span class="text-gray-400">Strength:</span><br><span class="' + strengthClass + ' font-bold">' + item.strength + '</span></div>' +
+                '<div><span class="text-gray-400">Crack Time:</span><br><span class="text-cyan-400">' + item.details.estimatedCrackTime + '</span></div>' +
+              '</div>' +
+            '</div>';
+          }).join('');
+        }
+
+        modal.classList.remove('hidden');
+        lucide.createIcons();
+      }
+
+      // Hide password history modal
+      function hideHistory() {
+        document.getElementById('history-modal').classList.add('hidden');
+      }
+
+      // Delete specific history item
+      function deleteHistoryItem(id) {
+        let history = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+        history = history.filter(item => item.id !== id);
+        localStorage.setItem('passwordHistory', JSON.stringify(history));
+        showHistory(); // Refresh the modal
+      }
+
+      // Clear all password history
+      function clearHistory() {
+        if (confirm('Are you sure you want to clear all password history? This action cannot be undone.')) {
+          localStorage.removeItem('passwordHistory');
+          
+          const button = event.target.closest('button');
+          const originalText = button.innerHTML;
+          button.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Cleared!</span>';
+          button.classList.remove('bg-red-600', 'hover:bg-red-700');
+          button.classList.add('bg-gray-600');
+          
+          setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-gray-600');
+            button.classList.add('bg-red-600', 'hover:bg-red-700');
+            lucide.createIcons();
+          }, 2000);
+          
+          lucide.createIcons();
+        }
+      }
+
+      // Close modal when clicking outside
+      document.getElementById('history-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideHistory();
+        }
+      });
     </script>
   </body>
 </html>
